@@ -7,3 +7,4 @@ docs/docs/site/
 x11docker/
 Makefile
 worlds/soccer/b.png
+game/controllers/MainSupervisor/__pycache__/
