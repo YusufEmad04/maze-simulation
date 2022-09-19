@@ -8,3 +8,4 @@ x11docker/
 Makefile
 worlds/soccer/b.png
 game/controllers/MainSupervisor/__pycache__/
+/game/worlds/.*.wbproj
