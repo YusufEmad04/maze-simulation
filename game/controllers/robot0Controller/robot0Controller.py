@@ -1,5 +1,5 @@
 from controller import Robot
-from MazeRobot import MazeRobot
+from RunningRobot import RunningRobot
 
 robot = Robot()
-MazeRobot(robot).run()
+RunningRobot(robot).run()

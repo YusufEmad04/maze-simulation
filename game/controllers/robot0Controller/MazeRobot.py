@@ -1,5 +1,3 @@
-from functions import *
-
 TIME_STEP = 32
 
 class MazeRobot:
@@ -11,17 +9,18 @@ class MazeRobot:
         self.right_wheel.setPosition(float('inf'))
         self.left_camera = robot.getDevice("camera_l")
         self.right_camera = robot.getDevice("camera_r")
+        self.color_sensor = robot.getDevice("colour_sensor")
+        self.gps = robot.getDevice("gps")
+        self.lidar = robot.getDevice("lidar")
+        self.lidar.enable(TIME_STEP)
+        self.gps.enable(TIME_STEP)
         self.left_camera.enable(TIME_STEP)
         self.right_camera.enable(TIME_STEP)
+        self.color_sensor.enable(TIME_STEP)
 
-    def set_left_vel(self, v):
-        self.left_wheel.setVelocity(v)
-
-    def set_right_vel(self, v):
-        self.right_wheel.setVelocity(v)
+        self.robot_pos = [0, 0]
+        self.color_sensor_values = [0, 0, 0]
 
 
     def run(self):
-        while self.robot.step(TIME_STEP) != -1:
-            self.set_right_vel(0)
-            self.set_left_vel(0)
+        pass
