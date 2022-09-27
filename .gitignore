@@ -9,3 +9,4 @@ Makefile
 worlds/soccer/b.png
 game/controllers/MainSupervisor/__pycache__/
 /game/worlds/.*.wbproj
+game/protos/custom_robot.proto

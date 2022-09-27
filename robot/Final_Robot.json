@@ -1,0 +1,67 @@
+{
+	"Wheel 1": {
+		"dictName": "Wheel 1",
+		"name": "Wheel",
+		"customName": "wheel1",
+		"type": "",
+		"x": 260,
+		"y": 15,
+		"z": 0,
+		"rx": 0,
+		"ry": 1,
+		"rz": 0,
+		"a": 1.57
+	},
+	"Wheel 2": {
+		"dictName": "Wheel 2",
+		"name": "Wheel",
+		"customName": "wheel2",
+		"type": "",
+		"x": -260,
+		"y": 15,
+		"z": 0,
+		"rx": 0,
+		"ry": 1,
+		"rz": 0,
+		"a": 1.57
+	},
+	"colsensor": {
+		"dictName": "colsensor",
+		"name": "Colour sensor",
+		"customName": "colour_sensor",
+		"type": "add",
+		"x": 0,
+		"y": -300,
+		"z": -370,
+		"rx": 0,
+		"ry": 0,
+		"rz": 1,
+		"a": 3.14
+	},
+	"camera2": {
+		"dictName": "camera2",
+		"name": "Camera",
+		"customName": "camera_r",
+		"type": "add",
+		"x": 370,
+		"y": 100,
+		"z": 0,
+		"rx": -1,
+		"ry": 0,
+		"rz": 0,
+		"a": 1.57
+	},
+	"camera3": {
+		"dictName": "camera3",
+		"name": "Camera",
+		"customName": "camera_l",
+		"type": "add",
+		"x": -370,
+		"y": 100,
+		"z": 0,
+		"rx": 0,
+		"ry": 0.71,
+		"rz": 0.71,
+		"a": 3.14
+	}
+}
