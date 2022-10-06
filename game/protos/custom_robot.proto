@@ -195,7 +195,7 @@ Robot {
         }
             Transform {
             translation 0.026 0.02 0.0
-            rotation 0 0 -1 1.57
+            rotation 0 0 1 1.57
             children [
             Transform {
             translation 0 0 0
@@ -333,7 +333,7 @@ Robot {
             
             Transform {
             translation -0.026 0.02 0.0
-            rotation 0 0 -1 1.57
+            rotation 0 0 1 1.57
             children [
             Transform {
             translation 0 0 0
@@ -596,7 +596,7 @@ Robot {
             }
             Transform {
             translation 0.0 0.0475 0.0
-            rotation 0 0 -1 1.57
+            rotation -0.58 0.58 -0.58 2.09
             children [
                 Lidar {
                 rotation 0.577 -0.577 -0.577 2.09
@@ -635,7 +635,87 @@ Robot {
                 rotation 0.577 -0.577 -0.577 2.09
             }
             ]
-            }DEF EPUCK_RING SolidPipe {
+            }
+            Transform {
+            translation 0.0 0.0185 0.0
+            rotation 0 0 0 0
+            children [
+            DistanceSensor {
+            name "distance sensor1"
+            lookupTable [
+                0 0 0
+                0.8 0.8 0
+            ]
+            type "infra-red"
+            rotation 0.577 -0.577 -0.577 2.09
+            }
+            ]
+            }
+            
+            Transform {
+            translation 0.0 0.0185 0.0
+            rotation 0 0 0 0
+            children [
+            DistanceSensor {
+            name "distance sensor2"
+            lookupTable [
+                0 0 0
+                0.8 0.8 0
+            ]
+            type "infra-red"
+            rotation 0.577 -0.577 -0.577 2.09
+            }
+            ]
+            }
+            
+            Transform {
+            translation 0.0 0.0185 0.0
+            rotation 0 0 0 0
+            children [
+            DistanceSensor {
+            name "distance sensor3"
+            lookupTable [
+                0 0 0
+                0.8 0.8 0
+            ]
+            type "infra-red"
+            rotation 0.577 -0.577 -0.577 2.09
+            }
+            ]
+            }
+            
+            Transform {
+            translation 0.0 0.0185 0.0
+            rotation 0 0 0 0
+            children [
+            DistanceSensor {
+            name "distance sensor4"
+            lookupTable [
+                0 0 0
+                0.8 0.8 0
+            ]
+            type "infra-red"
+            rotation 0.577 -0.577 -0.577 2.09
+            }
+            ]
+            }
+            
+            Transform {
+            translation 0.0 0.0185 0.0
+            rotation 0 0 0 0
+            children [
+            DistanceSensor {
+            name "distance sensor5"
+            lookupTable [
+                0 0 0
+                0.8 0.8 0
+            ]
+            type "infra-red"
+            rotation 0.577 -0.577 -0.577 2.09
+            }
+            ]
+            }
+            DEF EPUCK_RING SolidPipe {
     translation 0 0.0393 0
     rotation -0.5773502691896258 0.5773502691896258 0.5773502691896258 2.0943951023931953
     height 0.007
