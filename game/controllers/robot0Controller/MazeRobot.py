@@ -25,11 +25,26 @@ class MazeRobot:
         self.lidar = robot.getDevice("lidar")
         self.lidar.enable(TIME_STEP)
 
+        self.gyro = robot.getDevice("gyro")
+        self.gyro.enable(TIME_STEP)
+
+
         self.robot_pos = [0, 0]
         self.color_sensor_values = [0, 0, 0]
 
         self.image = None
 
+        self.color_case=""
 
-    def run(self):
-        pass
+       
+        self.left_encoder = self.left_wheel.getPositionSensor()    # Encoder initialization
+        self.right_encoder = self.right_wheel.getPositionSensor()
+        self.left_encoder.enable(TIME_STEP)
+        self.right_encoder.enable(TIME_STEP)
+
+    
+        self.emitter = robot.getDevice("emitter")
+        self.x_dimension=-54
+        self.z_dimension=-54
+        self.tiles_cnt = int((abs(self.x_dimension) + abs(self.z_dimension))/12)
+        self.map =[[-1 for k in range(self.tiles_cnt*4)] for j in range(self.tiles_cnt*4)]
