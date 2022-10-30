@@ -2,6 +2,7 @@ import numpy as np
 
 from MazeRobot import MazeRobot
 import cv2
+import math, statistics
 
 max_speed = 6.28
 
@@ -78,6 +79,54 @@ def get_cameras_values(robot: MazeRobot):
     robot.color_sensor_values[1] = robot.color_sensor.imageGetGreen(color_sensor_image, 1, 0, 0)
     robot.color_sensor_values[2] = robot.color_sensor.imageGetBlue(color_sensor_image, 1, 0, 0)
 
+
+def get_lidar(robot: MazeRobot):
+    # Loop on lidar data and add it to a 2D array
+    range_image = robot.lidar.getRangeImage()
+    for layer in range(4):
+        robot.lidar_data.append([])
+        for point in range(512):
+            robot.lidar_data[layer].append(range_image[layer * 512 + point] * 100)
+
+
+def lidar_group_values(robot: MazeRobot):
+    # Divide lidar into 12 groups (30 degrees each group) and take average value
+    # Add values in a group to temp arr, get standard deviation, remnove outliers and calc mean
+    for group in range(12):
+        temp_arr = []
+        # If front, get field of view (30 degree) in the front
+        if group == 0:
+            temp_arr.extend(robot.lidar_data[2][-20:])
+            temp_arr.extend(robot.lidar_data[2][:19])
+        else:
+            start_index = (group * 43) - 19
+            temp_arr.extend(robot.lidar_data[2][start_index : start_index+43])
+
+        # eliminate outliers and get mean
+        mean = statistics.mean(temp_arr)
+        stdev = statistics.stdev(temp_arr)
+
+        final_arr = [x for x in temp_arr if (mean + 2 * stdev > x > mean - 2 * stdev)]
+        # print("\nFinal ARRAY IS:\n", final_arr)
+        robot.lidar_groups[group] = statistics.mean(final_arr)
+
+    print("Groups:", robot.lidar_groups)
+
+
+def identify_tile_lidar(robot: MazeRobot):
+    """
+Walls                                        1
+    Holes                                    2
+    Swamps                                    3
+    Checkpoints                                4
+    Starting tile                            5
+    Connection tiles from area 1 to 2        6
+    Connection tiles from area 1 to 3        7
+    Connection tiles from area 2 to 3        8
+    Victims    The corresponding victim code   (H,S,U,F,P,C,O)
+    Any other tiles/edges/vertices            0
+    """
+    pass
 
 def get_all_values(robot: MazeRobot):
     get_gps(robot)

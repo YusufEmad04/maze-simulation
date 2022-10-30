@@ -32,6 +32,9 @@ class MazeRobot:
         self.robot_pos = [0, 0]
         self.color_sensor_values = [0, 0, 0]
         self.gyro_values = [0, 0, 0]
+        self.lidar_data = []
+        self.lidar_groups = [-1] * 12
+
 
         self.left_image = None
         self.right_image = None
