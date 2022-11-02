@@ -1,12 +1,23 @@
 from MazeRobot import MazeRobot
 import cv2
+import numpy as np
+from RCJRVision import RCJRVision
 
+
+
+def move(robot = MazeRobot):
+    set_left_vel(robot, 5)
+    set_right_vel(robot, 5)
+
+def stop(robot = MazeRobot):
+    set_left_vel(robot, 0)
+    set_right_vel(robot, 0)
 
 def set_left_vel(robot: MazeRobot, v):
-    robot.left_wheel.setVelocity(-v)
+    robot.left_wheel.setVelocity(v)
 
 def set_right_vel(robot: MazeRobot, v):
-    robot.right_wheel.setVelocity(-v)
+    robot.right_wheel.setVelocity(v)
 
 
 def get_gps(robot: MazeRobot):
@@ -18,48 +29,73 @@ def get_color_sensor(robot: MazeRobot):
     robot.color_sensor_values[0] = robot.color_sensor.imageGetRed(robot.image, 1, 0, 0)
     robot.color_sensor_values[1] = robot.color_sensor.imageGetGreen(robot.image, 1, 0, 0)
     robot.color_sensor_values[2] = robot.color_sensor.imageGetBlue(robot.image, 1, 0, 0)
+    r= robot.color_sensor_values[0]
+    g=robot.color_sensor_values[1]
+    b=robot.color_sensor_values[2]
+
+    if (r>=200) and (g>=200) and (b>=200):
+        print("White")
+        robot.color_case ="white"
+    elif (r>=230) and (g>=200) and (g<=240) and (b>110) and (b<=160):
+        print("Orange")
+        robot.color_case="orange"
+    elif (r<70) and (g<70) and (b<70):
+        print("Black")
+        robot.color_case="black"
 
 def get_all_values(robot: MazeRobot):
     get_gps(robot)
     get_color_sensor(robot)
 
+def color2num(color):
+    if color == "white": return 0
+    elif color == "orange": return 3
+    elif color == "black" : return 2
+    else: return 0
 
-def map_gen(robot: MazeRobot,x,z):
-    x_axis2indx = int((abs(robot.x_dimension)+x)/12)
-    z_axis2indx = int((abs(robot.z_dimension)+z)/12)
-    if(x_axis2indx==0):
-        x_axis2indx=2
-    else:
-        x_axis2indx=(4*x_axis2indx)+2
-    if(z_axis2indx==0):
-        z_axis2indx=2
-    else:
-        z_axis2indx=(4*z_axis2indx)+2
+def map_updeted(robot: MazeRobot,x,z):
+
+    x_axis2indx = (abs(robot.x_dimension)+x)/12 
+    z_axis2indx = (abs(robot.z_dimension)+z)/12
+
+    print(x_axis2indx-int(x_axis2indx))
+    print(z_axis2indx-int(z_axis2indx))
     
+    if(x_axis2indx-int(x_axis2indx) >=0.47  and x_axis2indx-int(x_axis2indx) <=0.53 and  z_axis2indx-int(z_axis2indx) >= 0.47 and z_axis2indx-int(z_axis2indx) <=0.53 ):
+        stop(robot)
+        print("stooop")
 
-    if robot.map[z_axis2indx][x_axis2indx]==-1:
-        if robot.color_case=="white":
-            robot.map[z_axis2indx][x_axis2indx]=0
-        if robot.color_case=="orange":
-            robot.map[z_axis2indx][x_axis2indx]=3
-    for i in robot.map:
-        print(i)
-    #print(robot.map)
-    print("""""")
+        x_axis2indx=int(x_axis2indx)
+        z_axis2indx=int(z_axis2indx)
+
+        x_center=(4*x_axis2indx)+2
+        z_center=(4*z_axis2indx)+2
+
+        if robot.map[z_center][x_center]==-1:
+
+            #//////////////Fill Corners////////////////////
+            dz= [-1,-1,1,1]
+            dx= [-1,1,-1,1]
+            if not robot.start_point:
+                corners_value=5
+                robot.start_point=1
+            else : corners_value= color2num(robot.color_case)
+            for i in range(0, 4):
+                robot.map[z_center+dz[i]][x_center+dx[i]]=corners_value
+
+            #//////////Fill center and sides//////////////
+            robot.map[z_center][x_center]=0
+            dz= [-1,0,1,0]
+            dx= [0,-1,0,1]
+            for i in range(0, 4):
+                robot.map[z_center+dz[i]][x_center+dx[i]]=0
+
+            #//////////print the matrix/////////////////
+            for i in robot.map:
+                print(i)
         
 
 
-
-def move_one_tile(dic):
-    #print(dic)
-    dic= int( (dic-int(dic))*100%10 )
-    
-    if dic >=4 and dic <=5:
-        return False
-    else:
-        return False
-
-# Avoid holes and swamps by looking at the RBG colour of the camera
 def viewColour(robot:MazeRobot, r,g,b):
     color_case=""
     
@@ -72,15 +108,120 @@ def viewColour(robot:MazeRobot, r,g,b):
     elif (r<70) and (g<70) and (b<70):
         print("Black")
         robot.color_case="black"
-
-
-
-
  
 
-def cam(img):
+def cam(robot: MazeRobot , img):
+
+    gray= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blur =  cv2.blur(gray,(3,3))
+    cv2.imshow("gray" , gray)
+    cv2.imshow("blur" , blur)
+
+    ret, thresh1 = cv2.threshold(blur, 170, 255, cv2.THRESH_BINARY)
+    #cv2.imshow("Blur",blur)
+    #cv2.imshow('Binary Threshold', thresh1)
+    thresh2=thresh1.copy()
+
+    mask = cv2.inRange(thresh1,(180), (255)) # masking white
+
+    #cv2.imshow("maskkk",mask)
+    cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    maskcopy=mask.copy()
+    cv2.fillPoly(maskcopy, cnts, (255,255,255))
+
+    thresh2[maskcopy>0]=(255)
+    #cv2.imshow("maskcopy",maskcopy)
+
+    mask2 = cv2.inRange(thresh2,(0), (50))
+    thresh1[mask2>0]=(255)
+
+    thresh1 = cv2.bitwise_not(thresh1)
+    cv2.imshow("new" ,thresh1)
+
+
+    cnts = cv2.findContours(thresh1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    final=thresh1.copy()
+    for c in cnts:
+        (x,y,w,h) = cv2.boundingRect(c)
+        final=thresh1[y:y+h, x:x+w]
+        #cv2.rectangle(final,(x,y),(x+w,y+h),(255,0,0),5)
+        cv2.imshow("final" , final)
+
+    h, w= final.shape
+    # this is horizontal division
+    third = h//3
+
+    top = final[:third, :]
+    middle = final[third:third*2, :]
+    bottom=final[third*2:, :]
+
+    #cv2.imshow('Top', top)
+    cnts = cv2.findContours(top, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    c1=(len(cnts))
+
+    cnts = cv2.findContours(middle, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    c2=(len(cnts))
+
+    cnts = cv2.findContours(bottom, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    c3=(len(cnts))
+
+    if c1==1 and c2==1 and c3==1:
+        print("S victim")
+    elif c1==2 and c2==1 and c3==2:
+        print("H victim")
+    elif c1==2 and c2==2 and c3==1:
+        print("U victim")
+    #cv2.imshow('Middle', middle)
+    #cv2.imshow('Bottom', bottom)
+    cv2.waitKey(1)
+
+
+
+    """
+    coords_list = []
+    img = np.frombuffer(img2, np.uint8).reshape((robot.right_camera.getHeight(), robot.right_camera.getWidth(), 4))
+
+
+    #convert from BGR to HSV color space
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #apply threshold
+    #blur = cv2.blur(gray,(5,5))
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
+
+
+
+    # draw all contours in green and accepted ones in red
+    contours, h = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours = contours[0] if len(contours) == 2 else contours[1]
+
+    for c in contours:
+        if cv2.contourArea(c) > 1000:
+            x,y,w,h = cv2.boundingRect(c)
+            ROI = image[y:y+h, x:x+w]
+            coords = list(c[0][0])
+            coords_list.append(coords)
+            print("VICTIIM")
+            #print("Victim at x="+str(coords[0])+" y="+str(coords[1]))
+            my_vision = RCJRVision.HSUVision()
+            letter, center = my_vision.find_HSU(img)
+            letter = str(letter)
+            if(letter=='S' or letter=='H' or letter=='U'):
+                robot.victim_status=letter
+                print(letter)
+                if robot.victim_timer!=0: robot.victim_timer=robot.robot.getTime()
+                if (robot.robot.getTime() - robot.victim_timer) < 3.0:
+                    stop(robot)
+                else: robot.victim_timer=0
 
     
+   
+
+
     rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
     rgb_copy = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
@@ -116,6 +257,7 @@ def cam(img):
          cv2.imshow("img2" ,rgb_copy)
          print("victim detected")
     cv2.waitKey(1)
-
+    
+"""
 
 

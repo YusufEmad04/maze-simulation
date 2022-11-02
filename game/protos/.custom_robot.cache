@@ -1,0 +1,11 @@
+Webots Proto Cache File version 1.5
+protoFileHash: a370a1e7c2941c2f44d6e03d2a41b483
+needsRobotAncestor: 1
+baseType: Robot
+slotType: 
+parameters: translation,rotation,name,camera_fieldOfView,camera_width,camera_height,camera_antiAliasing,camera_rotation,camera_noise,camera_motionBlur,emitter_channel,receiver_channel,controller,controllerArgs,customData,wheel_mult,max_velocity
+tags: 
+license: 
+licenseUrl: 
+documentationUrl: 
+info: 

@@ -35,8 +35,13 @@ class MazeRobot:
         self.image = None
 
         self.color_case=""
+        self.start_point=0 #detecting the start point
 
-       
+        self.stoptime=0
+        self.found_victim=0
+        self.victim_status='N'
+        self.victim_timer=0
+              
         self.left_encoder = self.left_wheel.getPositionSensor()    # Encoder initialization
         self.right_encoder = self.right_wheel.getPositionSensor()
         self.left_encoder.enable(TIME_STEP)
@@ -47,4 +52,4 @@ class MazeRobot:
         self.x_dimension=-54
         self.z_dimension=-54
         self.tiles_cnt = int((abs(self.x_dimension) + abs(self.z_dimension))/12)
-        self.map =[[-1 for k in range(self.tiles_cnt*4)] for j in range(self.tiles_cnt*4)]
+        self.map =[[-1 for k in range(self.tiles_cnt*4-3)] for j in range(self.tiles_cnt*4-3)]

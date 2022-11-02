@@ -1,0 +1,11 @@
+Webots Proto Cache File version 1.5
+protoFileHash: 39091f69484423d9066fbed6a8cd015d
+needsRobotAncestor: 0
+baseType: Transform
+slotType: 
+parameters: xPos,zPos,id,xScale,zScale,yScale,rightWall,bottomWall,topWall,leftWall,tile1Walls,tile2Walls,tile3Walls,tile4Walls,tile1External,tile2External,tile3External,tile4External,width,height,floor,start,trap,checkpoint,swamp,curve,tileColor,room
+tags: 
+license: 
+licenseUrl: 
+documentationUrl: 
+info: 
