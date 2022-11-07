@@ -30,14 +30,24 @@ def turn_left(robot: MazeRobot, v):
     set_right_vel(robot, v)
 
 
+# TODO turn when in swamp
 def turn_90_time_step(robot: MazeRobot):
-    x = 18
+
+    if robot.color_case == "orange":
+        x = 18
+        v = 5.4464
+    else:
+        x = 18
+        v = 3.4868
     while robot.robot.step(32) != -1 and x >= 0:
         get_all_values(robot)
         # print gyro values
         print("gyro values: ", robot.gyro_values)
         x -= 1
-        turn_left(robot, 3.4868)
+        turn_left(robot, v)
+    while robot.robot.step(32) != -1 and x >= -5:
+        stop(robot)
+        x -= 1
 
 
 def move_one_tile(robot: MazeRobot):
@@ -48,6 +58,11 @@ def move_one_tile(robot: MazeRobot):
         print("gyro values: ", robot.gyro_values)
         x -= 1
         move_forward(robot, 6.221)
+
+
+def stop(robot:MazeRobot):
+    set_left_vel(robot, 0)
+    set_right_vel(robot, 0)
 
 
 def get_gps(robot: MazeRobot):
@@ -87,6 +102,7 @@ def get_lidar(robot: MazeRobot):
         robot.lidar_data.append([])
         for point in range(512):
             robot.lidar_data[layer].append(range_image[layer * 512 + point] * 100)
+    lidar_group_values(robot)
 
 
 def lidar_group_values(robot: MazeRobot):
@@ -100,7 +116,7 @@ def lidar_group_values(robot: MazeRobot):
             temp_arr.extend(robot.lidar_data[2][:19])
         else:
             start_index = (group * 43) - 19
-            temp_arr.extend(robot.lidar_data[2][start_index : start_index+43])
+            temp_arr.extend(robot.lidar_data[2][start_index: start_index + 43])
 
         # eliminate outliers and get mean
         mean = statistics.mean(temp_arr)
@@ -113,62 +129,104 @@ def lidar_group_values(robot: MazeRobot):
     print("Groups:", robot.lidar_groups)
 
 
-def identify_tile_lidar(robot: MazeRobot):
+def get_wall(robot: MazeRobot):
+    min_val = 4
+    max_val = 8
+    arr = [0, 0, 0, 0]
+    print((robot.lidar_groups[8] + robot.lidar_groups[9]) / 2)
+    if min_val <= robot.lidar_groups[0] <= max_val:
+        arr[0] = 1
+    if min_val <= (robot.lidar_groups[2] + robot.lidar_groups[3]) / 2 <= max_val:
+        arr[1] = 1
+    if min_val <= robot.lidar_groups[5] <= max_val:
+        arr[2] = 1
+    if min_val <= (robot.lidar_groups[8] + robot.lidar_groups[9]) / 2 <= max_val:
+        arr[3] = 1
+    robot.lidar_wall = arr
+
+
+def create_tile(robot: MazeRobot):
     """
-Walls                                        1
+    Walls                                    1
     Holes                                    2
-    Swamps                                    3
-    Checkpoints                                4
+    Swamps                                   3
+    Checkpoints                              4
     Starting tile                            5
     Connection tiles from area 1 to 2        6
     Connection tiles from area 1 to 3        7
     Connection tiles from area 2 to 3        8
     Victims    The corresponding victim code   (H,S,U,F,P,C,O)
-    Any other tiles/edges/vertices            0
+    Any other tiles/edges/vertices           0
     """
-    pass
+    tile = [[0, 0, 0, 0] * 4]
+
+
+# TODO We are creating double walls
+def increase_maze_size(robot: MazeRobot, x, y, character):
+    # loop on each row and add new character 5 times per new tile
+    for i in robot.map:
+        i.extend([character] * 5 * x)
+    robot.maze_x_size += x
+    # add a new row of size x 5 times per new tile
+    for j in range(y):
+        for i in range(5):
+            robot.map.extend([[character] * 5 * robot.maze_x_size])
+    robot.maze_y_size += y
+
 
 def get_all_values(robot: MazeRobot):
+    robot.time_step += 2
     get_gps(robot)
     get_color_sensor(robot)
     get_cameras_values(robot)
     get_gyro_values(robot)
+    # get_lidar(robot)
 
 
-def map_gen(robot: MazeRobot, x, z):
-    x_axis2indx = int((abs(robot.x_dimension) + x) / 12)
-    z_axis2indx = int((abs(robot.z_dimension) + z) / 12)
-    if (x_axis2indx == 0):
-        x_axis2indx = 2
-    else:
-        x_axis2indx = (4 * x_axis2indx) + 2
-    if (z_axis2indx == 0):
-        z_axis2indx = 2
-    else:
-        z_axis2indx = (4 * z_axis2indx) + 2
+def map_updater(robot: MazeRobot, x, z):
+    x_axis2indx = (abs(robot.maze_x_size) + x) / 12
+    z_axis2indx = (abs(robot.maze_y_size) + z) / 12
 
-    return x_axis2indx, z_axis2indx
+    print(x_axis2indx - int(x_axis2indx))
+    print(z_axis2indx - int(z_axis2indx))
 
-    # if robot.map[z_axis2indx][x_axis2indx]==-1:
-    #     if robot.color_case=="white":
-    #         robot.map[z_axis2indx][x_axis2indx]=0
-    #     if robot.color_case=="orange":
-    #         robot.map[z_axis2indx][x_axis2indx]=3
-    # for i in robot.map:
-    #     print(i)
-    # #print(robot.map)
-    # print("""""")
+    if (x_axis2indx - int(x_axis2indx) >= 0.47 and x_axis2indx - int(x_axis2indx) <= 0.53 and z_axis2indx - int(
+            z_axis2indx) >= 0.47 and z_axis2indx - int(z_axis2indx) <= 0.53):
+        stop(robot)
+        print("stooop")
+
+        x_axis2indx = int(x_axis2indx)
+        z_axis2indx = int(z_axis2indx)
+
+        x_center = (4 * x_axis2indx) + 2
+        z_center = (4 * z_axis2indx) + 2
+
+        if robot.map[z_center][x_center] == -1:
+
+            # //////////////Fill Corners////////////////////
+            dz = [-1, -1, 1, 1]
+            dx = [-1, 1, -1, 1]
+            if not robot.start_point:
+                corners_value = 5
+                robot.start_point = 1
+            else:
+                pass
+                # corners_value = color2num(robot.color_case)
+            for i in range(0, 4):
+                robot.map[z_center + dz[i]][x_center + dx[i]] = corners_value
+
+            # //////////Fill center and sides//////////////
+            robot.map[z_center][x_center] = 0
+            dz = [-1, 0, 1, 0]
+            dx = [0, -1, 0, 1]
+            for i in range(0, 4):
+                robot.map[z_center + dz[i]][x_center + dx[i]] = 0
+
+            # //////////print the matrix/////////////////
+            for i in robot.map:
+                print(i)
 
 
-# def move_one_tile(dic):
-#     #print(dic)
-#     dic= int( (dic-int(dic))*100%10 )
-#
-#     if dic >=4 and dic <=5:
-#         return False
-#     else:
-#         return False
-#
 # # Avoid holes and swamps by looking at the RBG colour of the camera
 def viewColour(robot: MazeRobot, r, g, b):
     color_case = ""
