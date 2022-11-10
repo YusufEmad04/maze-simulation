@@ -48,6 +48,10 @@ class MazeRobot:
         self.left_encoder.enable(TIME_STEP)
         self.right_encoder.enable(TIME_STEP)
 
+        self.robot_position_list = []
+        self.time_steps_arr = []
+        self.tile_pos = []
+
         self.emitter = robot.getDevice("emitter")
 
         self.maze_x_size = 0

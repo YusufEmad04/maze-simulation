@@ -7,6 +7,18 @@ import math, statistics
 max_speed = 6.28
 
 
+def add_to_arr(arr, data):
+    print(arr)
+    print(data)
+    print('-------------')
+    arr.append(data)
+    if len(arr) >= 4:
+        arr.pop(0)
+
+def temp_add(arr, data):
+    new_arr = arr.copy()
+
+
 def set_left_vel(robot: MazeRobot, v):
     robot.left_wheel.setVelocity(-v)
 
@@ -32,12 +44,10 @@ def turn_left(robot: MazeRobot, v):
 
 # TODO turn when in swamp
 def turn_90_time_step(robot: MazeRobot):
-
+    x = 18
     if robot.color_case == "orange":
-        x = 18
         v = 5.4464
     else:
-        x = 18
         v = 3.4868
     while robot.robot.step(32) != -1 and x >= 0:
         get_all_values(robot)
@@ -53,14 +63,20 @@ def turn_90_time_step(robot: MazeRobot):
 def move_one_tile(robot: MazeRobot):
     x = 28
     while robot.robot.step(32) != -1 and x >= 0:
-        get_all_values(robot)
-        # print gyro values
-        print("gyro values: ", robot.gyro_values)
         x -= 1
         move_forward(robot, 6.221)
+    stop(robot)
+    while x >= -7:
+        x -= 1
+
+    return True
 
 
-def stop(robot:MazeRobot):
+def move_one_tile_gps(robot: MazeRobot):
+    pass
+
+
+def stop(robot: MazeRobot):
     set_left_vel(robot, 0)
     set_right_vel(robot, 0)
 
@@ -68,6 +84,20 @@ def stop(robot:MazeRobot):
 def get_gps(robot: MazeRobot):
     robot.robot_pos[0] = robot.gps.getValues()[0] * 100
     robot.robot_pos[1] = robot.gps.getValues()[2] * 100
+
+
+def get_dist(pos):
+    y = (pos[-1][1] - pos[0][1]) ** 2
+    x = (pos[-1][0] - pos[0][0]) ** 2
+    return math.sqrt(y + x)
+
+
+def get_speed(t, pos):
+    dist = get_dist(pos)
+    t = t[-1] - t[0]
+    if t == 0:
+        return 0
+    return 100 * dist / t
 
 
 def get_color_sensor(robot: MazeRobot):
@@ -175,8 +205,15 @@ def increase_maze_size(robot: MazeRobot, x, y, character):
 
 
 def get_all_values(robot: MazeRobot):
+    # increment step
     robot.time_step += 2
+    add_to_arr(robot.time_steps_arr, robot.time_step)
+
+    # GPS
     get_gps(robot)
+    add_to_arr(robot.robot_position_list, robot.robot_pos.copy())
+
+    # Other Sensors
     get_color_sensor(robot)
     get_cameras_values(robot)
     get_gyro_values(robot)
