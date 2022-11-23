@@ -2,8 +2,6 @@ import AutoInstall
 AutoInstall._import("np", "numpy")
 AutoInstall._import("cl", "termcolor")
 
-from ConsoleLog import Console
-
 class MapAnswer:
     def __init__(self, supervisor):
         self.supervisor = supervisor
@@ -372,12 +370,10 @@ class MapAnswer:
                             print(f'{Color.BG_WHITE}{Color.CYAN}{mm}{Color.RESET}', end='')
                     print('')
 
-            
             return self.answerMatrix
             
         except:
-            Console.log_err("Generating map answer error.")
-            
+            print("Generating map answer error.")
 
 class Color:
 	BLACK          = '\033[30m'
@@ -403,4 +399,3 @@ class Color:
 	BG_WHITE       = '\033[47m'
 	BG_DEFAULT     = '\033[49m'
 	RESET          = '\033[0m'
-

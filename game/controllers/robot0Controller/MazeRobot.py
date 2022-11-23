@@ -5,6 +5,8 @@ class MazeRobot:
     def __init__(self, robot):
         self.robot = robot
 
+        self.time_step = 0
+
         self.right_wheel = robot.getDevice("wheel1 motor")
         self.right_wheel.setPosition(float('inf'))
 
@@ -34,20 +36,38 @@ class MazeRobot:
         self.gyro_values = [0, 0, 0]
         self.lidar_data = []
         self.lidar_groups = [-1] * 12
-
+        self.lidar_wall = [0, 0, 0, 0]
 
         self.left_image = None
         self.right_image = None
 
         self.color_case = ""
 
+        self.directions = ["front", "right", "back", "left"]
+        self.current_direction = 0
+
         self.left_encoder = self.left_wheel.getPositionSensor()  # Encoder initialization
         self.right_encoder = self.right_wheel.getPositionSensor()
         self.left_encoder.enable(TIME_STEP)
         self.right_encoder.enable(TIME_STEP)
 
+        self.robot_position_list = []
+        self.time_steps_arr = []
+
+        self.tile_pos = []
+        self.start_tile = [-1, -1]
+        self.current_tile = [-1, -1]
+        self.wanted_tile = [-1, -1]
+
         self.emitter = robot.getDevice("emitter")
-        self.x_dimension = -54
-        self.z_dimension = -54
-        self.tiles_cnt = int((abs(self.x_dimension) + abs(self.z_dimension)) / 12)
-        self.map = [[-1 for k in range(self.tiles_cnt * 4)] for j in range(self.tiles_cnt * 4)]
+
+        self.maze_x_size = 0
+        self.maze_y_size = 0
+        # self.tiles_cnt = int((abs(self.x_dimension) + abs(self.z_dimension)) / 12)
+        self.map = [
+            ["0", "0", "0", "0", "0"],
+            ["0", "0", "0", "0", "0"],
+            ["0", "0", "0", "0", "0"],
+            ["0", "0", "0", "0", "0"],
+            ["0", "0", "0", "0", "0"]
+        ]

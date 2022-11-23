@@ -1,4 +1,4 @@
-#VRML_SIM R2021b utf8
+#VRML_SIM R2020a utf8
 # license: Copyright Cyberbotics Ltd. Licensed for use only with Webots.
 # license url: https://cyberbotics.com/webots_assets_license
 # tags: static
@@ -64,10 +64,10 @@ Robot {
       ]
       endPoint DEF EPUCK_LEFT_WHEEL Solid {
         translation -0.026 0.02 0
-        rotation 1 0 0 -1.57079
+        rotation 1 0 0 0
         children [
           DEF EPUCK_WHEEL Transform {
-            rotation 0 1 0 1.57
+            rotation 0 0 1 1.57
             children [
               Shape {
                 appearance PBRAppearance {
@@ -104,8 +104,7 @@ Robot {
                 castShadows FALSE
               }
               Transform {
-                rotation 1 0 0 1.57079
-                translation 0 0 -0.0035
+                translation 0 0.0035 0
                 children [
                   Shape {
                     appearance DEF EPUCK_TRANSPARENT_APPEARANCE PBRAppearance {
@@ -123,7 +122,6 @@ Robot {
                 ]
               }
               Transform {
-                rotation 1 0 0 1.57079
                 children [
                   Shape {
                     appearance PBRAppearance {
@@ -138,8 +136,7 @@ Robot {
                 ]
               }
               Transform {
-                rotation 1 0 0 1.57079
-                translation 0 0 -0.0065
+                translation 0 0.0065 0
                 children [
                   Shape {
                     appearance PBRAppearance {
@@ -199,7 +196,7 @@ Robot {
       ]
       endPoint DEF EPUCK_RIGHT_WHEEL Solid {
         translation 0.026 0.02 0
-        rotation 1 0 0 -1.57079
+        rotation 1 0 0 0
         children [
           Transform {
             rotation 0 1 0 3.14159

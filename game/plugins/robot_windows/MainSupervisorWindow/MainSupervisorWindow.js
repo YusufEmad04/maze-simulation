@@ -121,29 +121,8 @@ function receive (message){
 				document.getElementById("versionInfo").style.color = "#e67e22";
 				document.getElementById("versionInfo").innerHTML = `Ver. ${parts[1]} (Unreleased)`;
 				break;
-
-			case "worlds":
-				updateWorld(parts.slice(1));
 		}
 	}
-}
-
-function updateWorld(worlds_str){
-	var worlds_array_str = String(worlds_str)
-	let worlds = worlds_array_str.split(",");
-	for (let i = 0; i < worlds.length; i ++){
-		let button = document.createElement("button");
-		// let world_thumb = "../../../worlds/thumbnails/"+worlds[i].substring(0,worlds[i].length-4)+".png";
-		button.innerHTML = worlds[i];
-		button.onclick = function(){
-			window.robotWindow.send(`loadWorld,${worlds[i]}`);
-		};
-		button.setAttribute("class","btn-world");
-
-		document.getElementById("worlds_div").appendChild(button);
-		
-	}
-	document.getElementById("worldloader").remove();
 }
 
 function robotQuitColour(id){
@@ -197,7 +176,6 @@ function loadedController(id){
 	//Set name and toggle to unload button for robot 0
 	document.getElementById("load"+ id).style.display = "none";
 	document.getElementById("unload"+ id).style.display = "inline-block";
-	disableWhileSending(false);
 }
 
 function unloadedController(id){
@@ -273,7 +251,7 @@ function calculateTimeRemaining(done){
 	return mins + ":" + seconds;
 }
 
-function preRun() {
+function runPressed(){
 	//Disable all the loading buttons (cannot change loaded controllers once simulation starts)
 	setEnableButton("load0", false);
 	setEnableButton("unload0", false);
@@ -291,10 +269,6 @@ function preRun() {
 	setEnableButton('lopButton', true)
 
 	setEnableButton("giveupB", true);
-}
-
-function runPressed(){
-	preRun();
 	window.robotWindow.send("run");
 }
 
@@ -315,12 +289,6 @@ function resetPressed(){
 	setEnableButton('lopButton', false)
 	//Send signal to reset everything
 	window.robotWindow.send("reset");
-}
-
-function testPressed() {
-	preRun();
-	window.robotWindow.send("loadTest");
-	window.robotWindow.send("runTest")
 }
 
 function giveupPressed(){
@@ -372,17 +340,6 @@ function unloadPressed(id){
 	window.robotWindow.send("robot"+id+"Unload");
 }
 
-function disableWhileSending(disabled) {
-	setEnableButton("load0", !disabled);
-	setEnableButton("unload0", !disabled);
-	
-	setEnableButton("load1", !disabled);
-	setEnableButton("unload1", !disabled);
-	
-	setEnableButton("runButton", !disabled);
-}
-
-
 function fileOpened(filesId, acceptTypes, location, id){
 	//When file 0 value is changed
 	//Get the files
@@ -415,7 +372,6 @@ function fileOpened(filesId, acceptTypes, location, id){
 						loadedController(id);
 					}
 				};
-				disableWhileSending(true);
 				xmlhttp.open("POST", "http://127.0.0.1:60520/"+location+"/", true);
 				xmlhttp.send(fd);
 
