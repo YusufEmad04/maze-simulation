@@ -43,6 +43,9 @@ class MazeRobot:
 
         self.color_case = ""
 
+        self.directions = ["front", "right", "back", "left"]
+        self.current_direction = 0
+
         self.left_encoder = self.left_wheel.getPositionSensor()  # Encoder initialization
         self.right_encoder = self.right_wheel.getPositionSensor()
         self.left_encoder.enable(TIME_STEP)
@@ -50,7 +53,11 @@ class MazeRobot:
 
         self.robot_position_list = []
         self.time_steps_arr = []
+
         self.tile_pos = []
+        self.start_tile = [-1, -1]
+        self.current_tile = [-1, -1]
+        self.wanted_tile = [-1, -1]
 
         self.emitter = robot.getDevice("emitter")
 

@@ -8,15 +8,16 @@ max_speed = 6.28
 
 
 def add_to_arr(arr, data):
-    print(arr)
-    print(data)
-    print('-------------')
     arr.append(data)
     if len(arr) >= 4:
         arr.pop(0)
 
-def temp_add(arr, data):
-    new_arr = arr.copy()
+
+def arrived_at_coord(robot: MazeRobot, coord):
+    offset = 0.4
+    if (coord[0] - offset <= robot.robot_pos[0] <= coord[0] + offset) and (
+            coord[1] - offset <= robot.robot_pos[1] <= coord[1] + offset):
+        return True
 
 
 def set_left_vel(robot: MazeRobot, v):
@@ -42,19 +43,26 @@ def turn_left(robot: MazeRobot, v):
     set_right_vel(robot, v)
 
 
-# TODO turn when in swamp
-def turn_90_time_step(robot: MazeRobot):
+def turn_90_time_step(robot: MazeRobot, direction):
     x = 18
     if robot.color_case == "orange":
-        v = 5.4464
+        speed = 5.4464
     else:
-        v = 3.4868
+        speed = 3.4868
+
+    if direction == "right":
+        speed = -speed
+        robot.current_direction = (robot.current_direction + 1) % 4
+    elif direction == "left":
+        robot.current_direction = (robot.current_direction - 1) % 4
+
     while robot.robot.step(32) != -1 and x >= 0:
         get_all_values(robot)
-        # print gyro values
         print("gyro values: ", robot.gyro_values)
         x -= 1
-        turn_left(robot, v)
+        turn_left(robot, speed)
+
+    # TEMP Add a break after turn
     while robot.robot.step(32) != -1 and x >= -5:
         stop(robot)
         x -= 1
@@ -67,13 +75,33 @@ def move_one_tile(robot: MazeRobot):
         move_forward(robot, 6.221)
     stop(robot)
     while x >= -7:
+        stop(robot)
         x -= 1
 
     return True
 
 
 def move_one_tile_gps(robot: MazeRobot):
-    pass
+
+    if robot.current_direction in [0, 1]:
+        sign = 1
+    else:
+        sign = -1
+    if robot.current_direction in [0, 2]:
+        robot.wanted_tile = [robot.robot_pos[0] + sign * 12, robot.robot_pos[1]]
+    else:
+        robot.wanted_tile = [robot.robot_pos[0], robot.robot_pos[1] + sign * 12]
+
+    while robot.robot.step(32) != -1 and not arrived_at_coord(robot, robot.wanted_tile):
+        get_all_values(robot)
+        print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
+        move_forward(robot, 6.221)
+        print("----------")
+    print("_____WP_______\n\n\n_________WP________")
+    for i in range(50):
+        stop(robot)
+    print("_________Hoi__________")
+    return True
 
 
 def stop(robot: MazeRobot):
@@ -84,16 +112,19 @@ def stop(robot: MazeRobot):
 def get_gps(robot: MazeRobot):
     robot.robot_pos[0] = robot.gps.getValues()[0] * 100
     robot.robot_pos[1] = robot.gps.getValues()[2] * 100
+    if robot.start_tile == [-1, -1]:
+        print("Changing start")
+        robot.start_tile = robot.robot_pos.copy()
 
 
-def get_dist(pos):
-    y = (pos[-1][1] - pos[0][1]) ** 2
-    x = (pos[-1][0] - pos[0][0]) ** 2
+def get_dist(pos1, pos2):
+    y = (pos2[1] - pos1[1]) ** 2
+    x = (pos2[0] - pos1[0]) ** 2
     return math.sqrt(y + x)
 
 
 def get_speed(t, pos):
-    dist = get_dist(pos)
+    dist = get_dist(pos[0], pos[-1])
     t = t[-1] - t[0]
     if t == 0:
         return 0
