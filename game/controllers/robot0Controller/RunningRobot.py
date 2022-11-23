@@ -9,15 +9,20 @@ class RunningRobot(MazeRobot):
     def run(self):
         while self.robot.step(TIME_STEP) != -1:
             move(self)
+        
             
-            img = self.right_camera.getImage()
-            img = np.frombuffer(img, np.uint8).reshape((self.right_camera.getHeight(), self.right_camera.getWidth(), 4))
-            cam(self,img)
-
-            img = self.left_camera.getImage()
-            img = np.frombuffer(img, np.uint8).reshape((self.left_camera.getHeight(), self.left_camera.getWidth(), 4))
-            cam(self,img)
-
+            camera_image_L = self.left_camera.getImage()
+            camera_image_L = np.frombuffer(camera_image_L, np.uint8).reshape((self.left_camera.getHeight(), self.left_camera.getWidth(), 4))
+            img_L = cv2.cvtColor(camera_image_L, cv2.COLOR_BGRA2BGR)
+            cam(self,img_L)
+            
+            
+            # camera_image_R = self.right_camera.getImage()
+            # camera_image_R = np.frombuffer(camera_image_R, np.uint8).reshape((self.right_camera.getHeight(), self.right_camera.getWidth(), 4))
+            # img_R = cv2.cvtColor(camera_image_R, cv2.COLOR_BGRA2BGR)
+            # cam(self,img_R)
+            
+            
             #gyro_values= self.gyro.getValues()
             #round_gyro_values = [f"{num:.2f}" for num in gyro_values] #round gyro values
             #print(gyro_values)
@@ -26,9 +31,9 @@ class RunningRobot(MazeRobot):
             z = self.gps.getValues()[2]
             x*=100 #convert form meter to cm
             z*=100
-            print("gps_z: ",z)
-            print("gps_x: ",x)
-            map_gen(self,x, z)
+            #print("gps_z: ",z)
+            #print("gps_x: ",x)
+            map_updeter(self, x, z)
 
 
             image = self.color_sensor.getImage()
@@ -40,8 +45,8 @@ class RunningRobot(MazeRobot):
             #print("r: " + str(r) + " g: " + str(g) + " b: " + str(b))
             
     
-            get_all_values(self)
+            #get_all_values(self)
             #x,z = get_all_values(self)
-            print(self.robot_pos)
-            print(self.color_sensor_values)
+            #print(self.robot_pos)
+            #print(self.color_sensor_values)
 

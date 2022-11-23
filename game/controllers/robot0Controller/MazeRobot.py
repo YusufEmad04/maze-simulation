@@ -32,7 +32,7 @@ class MazeRobot:
         self.robot_pos = [0, 0]
         self.color_sensor_values = [0, 0, 0]
 
-        self.image = None
+        #self.image = None
 
         self.color_case=""
         self.start_point=0 #detecting the start point
