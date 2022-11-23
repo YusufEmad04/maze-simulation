@@ -222,17 +222,18 @@ def create_tile(robot: MazeRobot):
     tile = [[0, 0, 0, 0] * 4]
 
 
-# TODO We are creating double walls
 def increase_maze_size(robot: MazeRobot, x, y, character):
+
     # loop on each row and add new character 5 times per new tile
     for i in robot.map:
-        i.extend([character] * 5 * x)
+        i.extend([character] * 4 * x)
     robot.maze_x_size += x
     # add a new row of size x 5 times per new tile
     for j in range(y):
-        for i in range(5):
-            robot.map.extend([[character] * 5 * robot.maze_x_size])
+        for i in range(4):
+            robot.map.extend([[character] * len(robot.map[0])])
     robot.maze_y_size += y
+
 
 
 def get_all_values(robot: MazeRobot):
