@@ -618,7 +618,7 @@
             }
             Transform {
             translation 0.0 0.0475 0.0
-            rotation 0 0 1 1.57
+            rotation 0 1 0 1.57
             children [
                 Lidar {
                 rotation 0 1 0 -1.57
