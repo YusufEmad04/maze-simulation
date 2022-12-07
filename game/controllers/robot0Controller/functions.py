@@ -1,8 +1,10 @@
-import numpy as np
-
-from MazeRobot import MazeRobot
 import cv2
 import math, statistics
+import time
+import numpy as np
+from MazeRobot import MazeRobot
+from Camera import moving_cam
+from Camera import full_detection
 
 max_speed = 6.28
 
@@ -18,6 +20,8 @@ def arrived_at_coord(robot: MazeRobot, coord):
     if (coord[0] - offset <= robot.robot_pos[0] <= coord[0] + offset) and (
             coord[1] - offset <= robot.robot_pos[1] <= coord[1] + offset):
         return True
+    
+    return False
 
 
 def set_left_vel(robot: MazeRobot, v):
@@ -84,19 +88,59 @@ def move_one_tile(robot: MazeRobot):
 def move_one_tile_gps(robot: MazeRobot):
 
     if robot.current_direction in [0, 1]:
-        sign = 1
-    else:
         sign = -1
+    else:
+        sign = 1
+
     if robot.current_direction in [0, 2]:
         robot.wanted_tile = [robot.robot_pos[0] + sign * 12, robot.robot_pos[1]]
     else:
         robot.wanted_tile = [robot.robot_pos[0], robot.robot_pos[1] + sign * 12]
+
+    print(robot.robot_pos)
+    print(robot.wanted_tile)
 
     while robot.robot.step(32) != -1 and not arrived_at_coord(robot, robot.wanted_tile):
         get_all_values(robot)
         print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
         move_forward(robot, 6.221)
         print("----------")
+    print("_____WP_______\n\n\n_________WP________")
+    for i in range(50):
+        stop(robot)
+    print("_________Hoi__________")
+    return True
+
+
+def move_one_tile_gps_with_camera(robot: MazeRobot, img):
+    if robot.current_direction in [0, 1]:
+        sign = -1
+    else:
+        sign = 1
+    if robot.current_direction in [0, 2]:
+        robot.wanted_tile = [robot.robot_pos[0] + sign * 12, robot.robot_pos[1]]
+    else:
+        robot.wanted_tile = [robot.robot_pos[0], robot.robot_pos[1] + sign * 12]
+
+    detected = False
+    while robot.robot.step(32) != -1 and not arrived_at_coord(robot, robot.wanted_tile):
+
+        get_all_values(robot)
+        if moving_cam(robot.left_image):
+            victim_type = full_detection(robot.left_image)
+            print(f"detected {detected}")
+            if victim_type!="N" and detected == False:
+                detected = True
+                print(f"Victim type = {victim_type}") # send to the receiver
+                stop(robot)
+                time.sleep(0.7)
+        print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
+        move_forward(robot, 3)
+        print("----------")
+    
+    stop(robot)
+    time.sleep(2)
+
     print("_____WP_______\n\n\n_________WP________")
     for i in range(50):
         stop(robot)
@@ -147,8 +191,10 @@ def get_gyro_values(robot: MazeRobot):
 def get_cameras_values(robot: MazeRobot):
     robot.left_image = np.frombuffer(robot.left_camera.getImage(), np.uint8).reshape(
         (robot.left_camera.getHeight(), robot.left_camera.getWidth(), 4))
+    robot.left_image = cv2.cvtColor(robot.left_image , cv2.COLOR_BGRA2BGR)
     robot.right_image = np.frombuffer(robot.right_camera.getImage(), np.uint8).reshape(
         (robot.right_camera.getHeight(), robot.right_camera.getWidth(), 4))
+    robot.right_image = cv2.cvtColor(robot.right_image , cv2.COLOR_BGRA2BGR)
 
     color_sensor_image = robot.color_sensor.getImage()
     robot.color_sensor_values[0] = robot.color_sensor.imageGetRed(color_sensor_image, 1, 0, 0)
