@@ -27,6 +27,7 @@ class MazeRobot:
 
         self.lidar = robot.getDevice("lidar")
         self.lidar.enable(TIME_STEP)
+        self.lidar.enablePointCloud()
 
         self.gyro = robot.getDevice("gyro")
         self.gyro.enable(TIME_STEP)
@@ -35,6 +36,7 @@ class MazeRobot:
         self.color_sensor_values = [0, 0, 0]
         self.gyro_values = [0, 0, 0]
         self.lidar_data = []
+        self.lidar_data_point_cloud = []
         self.lidar_groups = [-1] * 12
         self.lidar_wall = [0, 0, 0, 0]
 

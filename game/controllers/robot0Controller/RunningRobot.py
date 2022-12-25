@@ -1,5 +1,5 @@
 from functions import *
-from  Camera import *
+from Camera import *
 from MazeRobot import MazeRobot
 import cv2
 import time
@@ -10,38 +10,23 @@ TIME_STEP = 32
 
 class RunningRobot(MazeRobot):
     def run(self):
-
+        x = 0
         while self.robot.step(TIME_STEP) != -1:
             get_all_values(self)
-
-            if not (self.current_direction == 2):
-                turn_90_time_step(self, "right")
-            if self.time_step >= 50:
-                if move_one_tile_gps_with_camera(self, self.left_image):
-                    print('1 tile moved')
-                    stop(self)
-                    time.sleep(1)
-                    add_to_arr(self.tile_pos, self.robot_pos.copy())
-
+            x += 2
+            if x % 20 == 0:
+                turn_90_time_step(self)
+            else:
+                stop(self)
             # stop(self)
-            # self.wanted_tile = (self.start_tile[0] + 12, self.start_tile[1])
-            if arrived_at_coord(self, self.wanted_tile):
-                print("ARRIVEDDDDD!!!!!!!!!!!!!!!!!! \n_______________")
-
-            print(self.wanted_tile, "IS WANTED")
-            # print("Distance away:", get_dist(self.wanted_tile, self.robot_pos))
-            print(self.robot_position_list)
-            print(self.tile_pos, "Tile_pos", end="\n_____________\n")
-            if len(self.tile_pos) >= 3:
-                print("1st: {}, 2nd {}".format(get_dist(self.tile_pos[0], self.tile_pos[1]),
-                                               get_dist(self.tile_pos[1], self.tile_pos[2])))
-
-            camera_image_L = self.left_camera.getImage()
-            camera_image_L = np.frombuffer(camera_image_L, np.uint8).reshape((self.left_camera.getHeight(), self.left_camera.getWidth(), 4))
-            img_L = cv2.cvtColor(camera_image_L, cv2.COLOR_BGRA2BGR)
-            # full_detection(img_L)
-            
-            # camera_image_R = self.right_camera.getImage()
-            # camera_image_R = np.frombuffer(camera_image_R, np.uint8).reshape((self.right_camera.getHeight(), self.right_camera.getWidth(), 4))
-            # img_R = cv2.cvtColor(camera_image_R, cv2.COLOR_BGRA2BGR)
-            # cam(self,img_R)
+            # # print_dict(check_walls(self))
+            # half_wall_index = int(math.atan2(1, 2) * 512 / (2 * math.pi))
+            # print(half_wall_index)
+            # print(self.lidar_data[2][half_wall_index])
+        # while self.robot.step(TIME_STEP) != -1:
+        #     if not (self.current_direction == 1) and self.time_step < 3:
+        #         turn_90_time_step_with_camera(self, "right")
+        #     else:
+        #
+        #         get_all_values(self)
+        #         move_one_tile_gps(self)

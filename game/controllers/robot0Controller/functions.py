@@ -47,12 +47,50 @@ def turn_left(robot: MazeRobot, v):
     set_right_vel(robot, v)
 
 
-def turn_90_time_step(robot: MazeRobot, direction):
+def turn_90_time_step_with_camera(robot: MazeRobot, direction):
     x = 18
+    z = 10
     if robot.color_case == "orange":
         speed = 5.4464
     else:
-        speed = 3.4868
+        speed = 3.4898
+
+    if direction == "right":
+        speed = -speed
+        robot.current_direction = (robot.current_direction + 1) % 4
+    elif direction == "left":
+        robot.current_direction = (robot.current_direction - 1) % 4
+
+    detected = False
+    y = 0
+    while robot.robot.step(32) != -1 and x >= 0:
+        if y > 0:
+            y -= 1
+            stop(robot)
+        else:
+            get_all_values(robot)
+            print("gyro values: ", robot.gyro_values)
+            x -= 1
+            turn_left(robot, speed)
+
+            if not detected:
+                if moving_cam(robot.left_image):
+                    victim_type = full_detection(robot.left_image)
+                    detected = True
+                    print(f"Victim type = {victim_type}")  # send to the receiver
+                    y = 10
+    while robot.robot.step(32) != -1 and z >= 0:
+        z -= 1
+        stop(robot)
+
+def turn_90_time_step(robot: MazeRobot, direction="right"):
+    x = 18
+    # if robot.color_case == "orange":
+    #     speed = 5.4464
+    # else:
+    #     speed = 3.4868
+
+    speed = 3.4898
 
     if direction == "right":
         speed = -speed
@@ -62,14 +100,20 @@ def turn_90_time_step(robot: MazeRobot, direction):
 
     while robot.robot.step(32) != -1 and x >= 0:
         get_all_values(robot)
-        print("gyro values: ", robot.gyro_values)
-        x -= 1
         turn_left(robot, speed)
+        # print("gyro values: ", robot.gyro_values)
+        if x == 10:
+            y = 2
+            while robot.robot.step(32) != -1 and y >= 0:
+                y -= 1
+                stop(robot)
+        x -= 1
+
 
     # TEMP Add a break after turn
-    while robot.robot.step(32) != -1 and x >= -5:
-        stop(robot)
-        x -= 1
+    # while robot.robot.step(32) != -1 and x >= -5:
+    #     stop(robot)
+    #     x -= 1
 
 
 def move_one_tile(robot: MazeRobot):
@@ -133,7 +177,13 @@ def move_one_tile_gps_with_camera(robot: MazeRobot, img):
                 detected = True
                 print(f"Victim type = {victim_type}") # send to the receiver
                 stop(robot)
-                time.sleep(0.7)
+                # time.sleep(0.7)
+                '''
+                loop for 23 times
+                
+                
+                
+                '''
         print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
         move_forward(robot, 3)
         print("----------")
@@ -204,12 +254,14 @@ def get_cameras_values(robot: MazeRobot):
 
 def get_lidar(robot: MazeRobot):
     # Loop on lidar data and add it to a 2D array
+    # empty the array
+    robot.lidar_data = []
     range_image = robot.lidar.getRangeImage()
     for layer in range(4):
         robot.lidar_data.append([])
         for point in range(512):
             robot.lidar_data[layer].append(range_image[layer * 512 + point] * 100)
-    lidar_group_values(robot)
+    # lidar_group_values(robot)
 
 
 def lidar_group_values(robot: MazeRobot):
@@ -294,7 +346,7 @@ def get_all_values(robot: MazeRobot):
     get_color_sensor(robot)
     get_cameras_values(robot)
     get_gyro_values(robot)
-    # get_lidar(robot)
+    get_lidar(robot)
 
 
 def map_updater(robot: MazeRobot, x, z):
@@ -392,3 +444,23 @@ def cam(img):
             cv2.imshow("img2", rgb_copy)
             print("victim detected")
     cv2.waitKey(1)
+
+def check_walls(robot: MazeRobot):
+
+    half_wall_index = int(math.atan(0.5) * 512 / 2 * math.pi)
+
+    front = (
+        robot.lidar_data[-1]
+    )
+
+    return {
+        "front": 3 < robot.lidar_data[2][0] < 6.1,
+        "right": 3 < robot.lidar_data[2][127] < 6.1,
+        "back": 3 < robot.lidar_data[2][255] < 6.1,
+        "left": 3 < robot.lidar_data[2][383] < 6.1,
+    }
+
+
+def print_dict(d):
+    for k, v in d.items():
+        print(k, v)
