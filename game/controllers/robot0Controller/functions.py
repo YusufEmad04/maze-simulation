@@ -14,6 +14,10 @@ def add_to_arr(arr, data):
     if len(arr) >= 4:
         arr.pop(0)
 
+def stop_with_timestep(robot: MazeRobot, time):
+    while robot.robot.step(32) != -1 and time >= 0:
+        time -= 1
+        stop(robot)
 
 def arrived_at_coord(robot: MazeRobot, coord):
     offset = 0.4
@@ -47,12 +51,48 @@ def turn_left(robot: MazeRobot, v):
     set_right_vel(robot, v)
 
 
+def turn_90_time_step_with_camera(robot: MazeRobot, direction):
+    x = 18
+    z = 10
+    if robot.color_case == "orange":
+        speed = 5.4464
+    else:
+        speed = 3.4898
+
+    if direction == "right":
+        speed = -speed
+        robot.current_direction = (robot.current_direction + 1) % 4
+    elif direction == "left":
+        robot.current_direction = (robot.current_direction - 1) % 4
+
+    detected = False
+    y = 0
+    while robot.robot.step(32) != -1 and x >= 0:
+        if y > 0:
+            y-=1
+            stop(robot)
+        else:    
+            get_all_values(robot)
+            print("gyro values: ", robot.gyro_values)
+            x -= 1
+            turn_left(robot, speed)
+        
+            if not detected:
+                if moving_cam(robot.left_image):
+                    victim_type = full_detection(robot.left_image)
+                    detected = True
+                    print(f"Victim type = {victim_type}") # send to the receiver
+                    y = 10
+    while robot.robot.step(32) != -1 and z >= 0:
+        z-=1
+        stop(robot)
+
 def turn_90_time_step(robot: MazeRobot, direction):
     x = 18
     if robot.color_case == "orange":
         speed = 5.4464
     else:
-        speed = 3.4868
+        speed = 3.4898
 
     if direction == "right":
         speed = -speed
@@ -74,26 +114,30 @@ def turn_90_time_step(robot: MazeRobot, direction):
 
 def move_one_tile(robot: MazeRobot):
     x = 28
+    z = 12
+    # wall_dict = check_walls(robot)
+    # front=wall_dict['front']
+    # if not front:
     while robot.robot.step(32) != -1 and x >= 0:
         x -= 1
         move_forward(robot, 6.221)
-    stop(robot)
-    while x >= -7:
-        stop(robot)
-        x -= 1
+
+    stop_with_timestep(robot,z)
 
     return True
+    # return False
+    
 
 
 def move_one_tile_gps(robot: MazeRobot):
-
+    z = 30
     if robot.current_direction in [0, 1]:
-        sign = -1
-    else:
         sign = 1
+    else:
+        sign = -1
 
     if robot.current_direction in [0, 2]:
-        robot.wanted_tile = [robot.robot_pos[0] + sign * 12, robot.robot_pos[1]]
+        robot.wanted_tile = [robot.robot_pos[0] + sign * 12 , robot.robot_pos[1]]
     else:
         robot.wanted_tile = [robot.robot_pos[0], robot.robot_pos[1] + sign * 12]
 
@@ -102,12 +146,15 @@ def move_one_tile_gps(robot: MazeRobot):
 
     while robot.robot.step(32) != -1 and not arrived_at_coord(robot, robot.wanted_tile):
         get_all_values(robot)
-        print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
+        # print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
         move_forward(robot, 6.221)
-        print("----------")
+        # print("----------")
+
     print("_____WP_______\n\n\n_________WP________")
-    for i in range(50):
+    while robot.robot.step(32) != -1 and arrived_at_coord(robot, robot.wanted_tile) and z >= 0:
+        z-=1
         stop(robot)
+
     print("_________Hoi__________")
     return True
 
@@ -117,6 +164,7 @@ def move_one_tile_gps_with_camera(robot: MazeRobot, img):
         sign = -1
     else:
         sign = 1
+
     if robot.current_direction in [0, 2]:
         robot.wanted_tile = [robot.robot_pos[0] + sign * 12, robot.robot_pos[1]]
     else:
@@ -129,13 +177,13 @@ def move_one_tile_gps_with_camera(robot: MazeRobot, img):
         if moving_cam(robot.left_image):
             victim_type = full_detection(robot.left_image)
             print(f"detected {detected}")
-            if victim_type!="N" and detected == False:
+            if victim_type!="N":
                 detected = True
                 print(f"Victim type = {victim_type}") # send to the receiver
                 stop(robot)
                 time.sleep(0.7)
         print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
-        move_forward(robot, 3)
+        turn_right(robot, 3)
         print("----------")
     
     stop(robot)
@@ -180,6 +228,28 @@ def get_color_sensor(robot: MazeRobot):
     robot.color_sensor_values[0] = robot.color_sensor.imageGetRed(robot.image, 1, 0, 0)
     robot.color_sensor_values[1] = robot.color_sensor.imageGetGreen(robot.image, 1, 0, 0)
     robot.color_sensor_values[2] = robot.color_sensor.imageGetBlue(robot.image, 1, 0, 0)
+    r =  robot.color_sensor_values[0]
+    g =  robot.color_sensor_values[1]
+    b =  robot.color_sensor_values[2]
+    color_case = "None"
+
+    if (r >= 200) and (g >= 200) and (b >= 200):
+        robot.color_case = "white"
+    elif (r >= 230) and (g >= 200) and (g <= 240) and (b > 110) and (b <= 160):
+        robot.color_case = "orange"
+    elif (r < 70) and (g < 70) and (b < 70):
+        robot.color_case = "black"
+    elif (r > 200) and (g < 70) and (b < 70):
+        robot.color_case = "red"
+    elif (70 < r < 170) and (g < 70) and (b > 150):
+        robot.color_case = "purple"
+    elif (r < 70) and (g < 70) and (b > 200):
+        robot.color_case = "blue"
+    elif (r < 100) and (g < 100) and (20 > b > 120):
+        robot.color_case = "gray"
+
+    print(f"color_sensor: {color_case}")
+    
 
 
 def get_gyro_values(robot: MazeRobot):
@@ -203,13 +273,24 @@ def get_cameras_values(robot: MazeRobot):
 
 
 def get_lidar(robot: MazeRobot):
+    robot.lidar_data = []
     # Loop on lidar data and add it to a 2D array
     range_image = robot.lidar.getRangeImage()
     for layer in range(4):
         robot.lidar_data.append([])
         for point in range(512):
             robot.lidar_data[layer].append(range_image[layer * 512 + point] * 100)
-    lidar_group_values(robot)
+    # lidar_group_values(robot)
+
+def check_walls(robot: MazeRobot):
+    wall_dict =  {
+        "front": 0 < robot.lidar_data[2][0] < 6.1,
+        "right": 0 < robot.lidar_data[2][127] < 6.1,
+        "back": 0 < robot.lidar_data[2][255] < 6.1,
+        "left": 0 < robot.lidar_data[2][383] < 6.1,
+    }
+
+    return wall_dict
 
 
 def lidar_group_values(robot: MazeRobot):
@@ -294,7 +375,7 @@ def get_all_values(robot: MazeRobot):
     get_color_sensor(robot)
     get_cameras_values(robot)
     get_gyro_values(robot)
-    # get_lidar(robot)
+    get_lidar(robot)
 
 
 def map_updater(robot: MazeRobot, x, z):
@@ -342,53 +423,4 @@ def map_updater(robot: MazeRobot, x, z):
 
 
 # # Avoid holes and swamps by looking at the RBG colour of the camera
-def viewColour(robot: MazeRobot, r, g, b):
-    color_case = ""
 
-    if (r >= 200) and (g >= 200) and (b >= 200):
-        print("White")
-        robot.color_case = "white"
-    elif (r >= 230) and (g >= 200) and (g <= 240) and (b > 110) and (b <= 160):
-        print("Orange")
-        robot.color_case = "orange"
-    elif (r < 70) and (g < 70) and (b < 70):
-        print("Black")
-        robot.color_case = "black"
-
-
-def cam(img):
-    rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-    rgb_copy = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-
-    # blanc = np.zeros(img.shape[:2] , dtype='uint8')
-    # blanc.fill(255)
-    # blanc = cv2.cvtColor(blanc, cv2.COLOR_BGR2RGB)
-
-    mask1 = cv2.inRange(rgb, (200, 200, 200), (255, 255, 255))  # masking white
-    rgb[mask1 > 0] = (255, 0, 0)
-    cv2.imshow("rgb", rgb)
-
-    difference = cv2.subtract(rgb, rgb_copy)
-    b, g, r = cv2.split(difference)
-    if cv2.countNonZero(b) == 0 and cv2.countNonZero(g) == 0 and cv2.countNonZero(r) == 0:
-        print("No Victim detected")
-
-    else:
-        print("white")
-        # img2 = np.zeros(mask1.shape[:2] , dtype='uint8')
-        # img2 = cv2.bitwise_xor(blanc,rgb,mask=mask1)
-        # img2 = cv2.bitwise_xor(blanc,rgb)
-        # img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
-
-        # cv2.imshow("JJ" , img2)
-
-        mask2 = cv2.inRange(rgb_copy, (-50, -50, -50), (80, 80, 80))
-        rgb_copy[mask2 > 0] = (0, 0, 255)
-        difference = cv2.subtract(rgb, rgb_copy)
-        b, g, r = cv2.split(difference)
-        if cv2.countNonZero(b) == 0 and cv2.countNonZero(g) == 0 and cv2.countNonZero(r) == 0:
-            print("Not found")
-        else:
-            cv2.imshow("img2", rgb_copy)
-            print("victim detected")
-    cv2.waitKey(1)

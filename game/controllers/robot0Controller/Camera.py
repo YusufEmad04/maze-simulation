@@ -5,7 +5,7 @@ import numpy as np
 
 
 def sign_detection(img):
-    #img= cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
     #gray scale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -26,7 +26,6 @@ def sign_detection(img):
     if(len(cnts) > 0):
     #cnts = cnts[0] if len(cnts) == 2 else cnts[1]
         cv2.imshow("thresh",thresh)
-        
         
         #get co-ordinates of the contour
         sign = thresh[0:1 , 0:1]
