@@ -7,6 +7,8 @@ class MazeRobot:
 
         self.time_step = 0
 
+        self.can_run_simulation = True
+
         self.right_wheel = robot.getDevice("wheel1 motor")
         self.right_wheel.setPosition(float('inf'))
 
