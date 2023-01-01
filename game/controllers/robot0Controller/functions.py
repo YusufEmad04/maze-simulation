@@ -16,6 +16,7 @@ def run_simulation(robot: MazeRobot, step=32):
         if result == -1:
             robot.can_run_simulation = False
 
+
 def add_to_arr(arr, data):
     arr.append(data)
     if len(arr) >= 4:
@@ -90,8 +91,9 @@ def turn_90_time_step_with_camera(robot: MazeRobot, direction):
         z -= 1
         stop(robot)
 
+
 def turn_90_time_step(robot: MazeRobot, direction="right"):
-    x = 19
+    x = 19j
     # if robot.color_case == "orange":
     #     speed = 5.4464
     # else:
@@ -143,29 +145,36 @@ def move_one_tile(robot: MazeRobot):
 
 
 def move_one_tile_gps(robot: MazeRobot):
-
-    if robot.current_direction in [0, 1]:
+    # Get wanted position
+    if robot.current_direction in [0, 2]:
         sign = -1
     else:
         sign = 1
 
     if robot.current_direction in [0, 2]:
-        robot.wanted_tile = [robot.robot_pos[0] + sign * 30, robot.robot_pos[1]]
+        robot.wanted_tile = [robot.abs_pos[0] + sign * 12, robot.abs_pos[1]]
     else:
-        robot.wanted_tile = [robot.robot_pos[0], robot.robot_pos[1] + sign * 30]
+        robot.wanted_tile = [robot.abs_pos[0], robot.abs_pos[1] + sign * 12]
 
-    print(robot.robot_pos)
-    print(robot.wanted_tile)
+    # Loop until arrived at wanted position
+    while not arrived_at_coord(robot, robot.wanted_tile):
+        if robot.can_run_simulation:
+            print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
+            move_forward(robot, 6.221)
+            # print("----------")
+        run_simulation(robot)
 
-    while robot.robot.step(32) != -1 and not arrived_at_coord(robot, robot.wanted_tile):
-        get_all_values(robot)
-        print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
-        move_forward(robot, 6.221)
-        print("----------")
-    print("_____WP_______\n\n\n_________WP________")
-    for i in range(50):
-        stop(robot)
-    print("_________Hoi__________")
+    # Update abs_position
+    robot.abs_pos = robot.wanted_tile
+    print("Abs_Pos: {}\nGPS:: {}\ndiff: {}\n___________".format(robot.abs_pos, robot.robot_pos, get_dist(robot.abs_pos, robot.robot_pos)))
+
+    # Wait
+    x = 0
+    while x <= 60:
+        if robot.can_run_simulation:
+            stop(robot)
+            x += 2
+        run_simulation(robot)
     return True
 
 
@@ -219,9 +228,8 @@ def stop(robot: MazeRobot):
 def get_gps(robot: MazeRobot):
     robot.robot_pos[0] = robot.gps.getValues()[0] * 100
     robot.robot_pos[1] = robot.gps.getValues()[2] * 100
-    if robot.start_tile == [-1, -1]:
-        print("Changing start")
-        robot.start_tile = robot.robot_pos.copy()
+    if robot.abs_pos == [-1, -1]:
+        robot.abs_pos = robot.robot_pos.copy()
 
 
 def get_dist(pos1, pos2):

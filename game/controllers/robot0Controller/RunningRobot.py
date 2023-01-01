@@ -11,24 +11,15 @@ TIME_STEP = 32
 class RunningRobot(MazeRobot):
     def run(self):
         x = 0
-        # while self.robot.step(TIME_STEP) != -1:
-        #     get_all_values(self)
-        #     if x % 10 == 0:
-        #         turn_90_time_step(self)
-        #     else:
-        #         stop(self)
-        #
-        #     x += 1
-        #     print(self.current_direction)
         run_simulation(self)
         while self.can_run_simulation:
 
-            if x % 10 == 0:
+            if self.current_direction != 1:
                 turn_90_time_step(self)
             else:
-                stop(self)
+                # print("Abs_Pos: {}\nGPS:: {}\n___________".format(self.abs_pos, self.robot_pos))
+                move_one_tile_gps(self)
 
-            x += 1
-            print(self.current_direction)
+                # print(self.current_direction)
 
             run_simulation(self)
