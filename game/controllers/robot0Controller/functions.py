@@ -93,13 +93,13 @@ def turn_90_time_step_with_camera(robot: MazeRobot, direction):
 
 
 def turn_90_time_step(robot: MazeRobot, direction="right"):
-    x = 19j
+    x = 19*2
     # if robot.color_case == "orange":
     #     speed = 5.4464
     # else:
     #     speed = 3.4868
 
-    speed = 3.4898
+    speed = 3.48985044
 
     if direction == "right":
         speed = -speed
@@ -121,7 +121,7 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
         turn_left(robot, speed)
 
         if robot.can_run_simulation:
-            run_simulation(robot)
+            run_simulation(robot, step=16)
         else:
             return -1
 

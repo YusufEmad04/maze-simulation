@@ -14,12 +14,17 @@ class RunningRobot(MazeRobot):
         run_simulation(self)
         while self.can_run_simulation:
 
-            if self.current_direction != 1:
+            x += 1
+            if x % 10 == 0:
                 turn_90_time_step(self)
             else:
-                # print("Abs_Pos: {}\nGPS:: {}\n___________".format(self.abs_pos, self.robot_pos))
-                move_one_tile_gps(self)
-
-                # print(self.current_direction)
+                stop(self)
+            # if self.current_direction != 1:
+            #     turn_90_time_step(self)
+            # else:
+            #     # print("Abs_Pos: {}\nGPS:: {}\n___________".format(self.abs_pos, self.robot_pos))
+            #     move_one_tile_gps(self)
+            #
+            #     # print(self.current_direction)
 
             run_simulation(self)
