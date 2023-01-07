@@ -93,7 +93,7 @@ def turn_90_time_step_with_camera(robot: MazeRobot, direction):
 
 
 def turn_90_time_step(robot: MazeRobot, direction="right"):
-    x = 19*2
+    x = 19*2 + 2
     # if robot.color_case == "orange":
     #     speed = 5.4464
     # else:
@@ -220,9 +220,13 @@ def move_one_tile_gps_with_camera(robot: MazeRobot, img):
     return True
 
 
-def stop(robot: MazeRobot):
+def stop(robot: MazeRobot, t=10):
     set_left_vel(robot, 0)
     set_right_vel(robot, 0)
+    if robot.can_run_simulation:
+        run_simulation(robot, step=16*t)
+    else:
+        return -1
 
 
 def get_gps(robot: MazeRobot):
@@ -487,3 +491,26 @@ def check_walls(robot: MazeRobot):
 def print_dict(d):
     for k, v in d.items():
         print(k, v)
+
+def print_lidar_triples(robot: MazeRobot):
+    front_ray = (robot.lidar_data[2][0], 0)
+    right_ray = (robot.lidar_data[2][128], 128)
+    back_ray = (robot.lidar_data[2][256], 256)
+    left_ray = (robot.lidar_data[2][384], 384)
+
+    print("front {}   {}   {}, range: {}".format(*get_ray_triple(robot, front_ray)))
+    print("right {}   {}   {}, range: {}".format(*get_ray_triple(robot, right_ray)))
+    print("back  {}   {}   {}, range: {}".format(*get_ray_triple(robot, back_ray)))
+    print("left  {}   {}   {}, range: {}".format(*get_ray_triple(robot, left_ray)))
+    print("-------------------------")
+
+def get_ray_triple(robot: MazeRobot, ray):
+
+
+    if 9 <= ray[0] <= 15:
+        range = 50
+    else:
+        range = 20
+
+    return robot.lidar_data[2][ray[1] - range], robot.lidar_data[2][ray[1]], robot.lidar_data[2][ray[1] + range], range
+

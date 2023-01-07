@@ -75,3 +75,6 @@ class MazeRobot:
             ["0", "0", "0", "0", "0"],
             ["0", "0", "0", "0", "0"]
         ]
+
+        self.current_status = "stop"
+
