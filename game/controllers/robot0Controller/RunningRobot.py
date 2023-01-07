@@ -6,6 +6,7 @@ import time
 import numpy as np
 import threading
 from server import server
+import socket
 
 TIME_STEP = 32
 
@@ -16,6 +17,11 @@ class RunningRobot(MazeRobot):
         set_left_vel(self, 0)
         set_right_vel(self, 0)
         stop(self, 150)
+
+        print("-----------------")
+        print("write this ip address inside the app")
+        print(str(socket.gethostbyname(socket.gethostname())) + ":5000")
+        print("-----------------")
 
         threading.Thread(target=server, args=(self,)).start()
 
