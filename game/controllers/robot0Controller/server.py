@@ -3,6 +3,7 @@ import threading
 import MazeRobot
 from flask import Flask, Response
 import cv2
+import socket
 
 def server(robot: MazeRobot):
     app = Flask(__name__)
@@ -51,5 +52,14 @@ def server(robot: MazeRobot):
         return "OK"
 
     app.run(host='0.0.0.0', port=5000)
+
+
+def start_server(robot: MazeRobot):
+    print("-----------------")
+    print("write this ip address inside the app")
+    print(str(socket.gethostbyname(socket.gethostname())) + ":5000")
+    print("-----------------")
+
+    threading.Thread(target=server, args=(robot,)).start()
 
 
