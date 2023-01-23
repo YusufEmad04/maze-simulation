@@ -25,3 +25,4 @@ reflog/
 Makefile
 
 *.cpython-39.pyc
+game/controllers/robot0Controller/images

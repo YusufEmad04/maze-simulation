@@ -5,6 +5,7 @@ import numpy as np
 from MazeRobot import MazeRobot
 from Camera import moving_cam
 from Camera import full_detection
+import struct
 
 max_speed = 6.28
 
@@ -13,6 +14,7 @@ def run_simulation(robot: MazeRobot, step=32):
     if robot.can_run_simulation:
         result = robot.robot.step(step)
         get_all_values(robot)
+        robot.counter += 1
         if result == -1:
             robot.can_run_simulation = False
 
@@ -513,4 +515,45 @@ def get_ray_triple(robot: MazeRobot, ray):
         range = 20
 
     return robot.lidar_data[2][ray[1] - range], robot.lidar_data[2][ray[1]], robot.lidar_data[2][ray[1] + range], range
+
+
+def send_victim(robot: MazeRobot, vt):
+    victim_type = bytes(vt, "utf-8")
+    x = int(robot.gps.getValues()[0] * 100)
+    y = int(robot.gps.getValues()[2] * 100)
+    message = struct.pack("i i c", x, y, victim_type)
+    robot.emitter.send(message)
+
+
+def turn_90_with_lidar(robot: MazeRobot):
+    start_arr = [
+        *[i for i in robot.lidar_data[2][128:]],
+        *[i for i in robot.lidar_data[2][:128]],
+    ]
+
+
+
+    while not are_equal(start_arr, robot.lidar_data[2]):
+
+        print("target: {}".format(start_arr[:10]))
+        print("current: {}".format(robot.lidar_data[2][:10]))
+        print("-------------------------")
+
+        set_left_vel(robot, -1)
+        set_right_vel(robot, 1)
+
+        if robot.can_run_simulation:
+            run_simulation(robot, 16)
+        else:
+            return -1
+
+    set_left_vel(robot, 0)
+    set_right_vel(robot, 0)
+
+def are_equal(a, b):
+    for i in range(len(a)):
+        if abs(a[i] - b[i]) > 0.5:
+            return False
+    return True
+
 

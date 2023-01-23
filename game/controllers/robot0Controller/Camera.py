@@ -22,7 +22,7 @@ def sign_detection(img):
     cnts,_ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     sign_pixel_count = cv2.countNonZero(thresh)
 
-    print("number of contours found" , len(cnts))
+    # print("number of contours found" , len(cnts))
     if(len(cnts) > 0):
     #cnts = cnts[0] if len(cnts) == 2 else cnts[1]
         cv2.imshow("thresh",thresh)
@@ -76,10 +76,10 @@ def detect_hazards(sign_colored):
 
     #check if the orange color exists in the img
     pixels = cv2.countNonZero(orange_mask)
-    print(f"orange pixels= {pixels}")
+    # print(f"orange pixels= {pixels}")
 
     if pixels > 10:
-        print("Organic Peroxide _ orange")
+        # print("Organic Peroxide _ orange")
         sign_type="O"
         return 
 
@@ -92,10 +92,10 @@ def detect_hazards(sign_colored):
 
     #check if the red color exists in the img
     pixels = cv2.countNonZero(red_mask)
-    print(f"red pixels= {pixels}")
+    # print(f"red pixels= {pixels}")
 
     if pixels > 10:
-        print("Flammable Gas _ red")
+        # print("Flammable Gas _ red")
         sign_type="F"
         return
 
@@ -158,16 +158,16 @@ def letter_detection(sign):
     c3=(len(cnts))
 
     #check wheather a letter is detected and change the bool value if yes 
-    print ("lETTER CODE: ", c1,c2,c3)
+    # print ("lETTER CODE: ", c1,c2,c3)
     if c1==1 and c3==1:
-        print("S victim")
+        # print("S victim")
         letter_type="S"
     elif c1==2 and c2==1 and c3==2:
-        print("H victim")
+        # print("H victim")
         letter_type="H"
     
     elif c1==2 and c2==2 and c3==1:
-        print("U victim")
+        # print("U victim")
         letter_type="U"
 
     return letter_type, bottom
@@ -207,13 +207,13 @@ def hazard_sign_detection(bottom):
                 black_pixel+=1
 
     #compare between the two numbers
-    print(f"white pixels: {white_pixel} black pixels: {black_pixel}")
+    # print(f"white pixels: {white_pixel} black pixels: {black_pixel}")
 
     if(black_pixel>white_pixel):
-        print("Corrosive_Black")
+        # print("Corrosive_Black")
         sign_type="C"
     else:
-        print("POISON_white")
+        # print("POISON_white")
         sign_type="P"
     return sign_type
     

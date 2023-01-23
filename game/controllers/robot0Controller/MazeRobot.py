@@ -1,4 +1,4 @@
-TIME_STEP = 32
+TIME_STEP = 16
 
 
 class MazeRobot:
@@ -77,4 +77,6 @@ class MazeRobot:
         ]
 
         self.current_status = "stop"
+
+        self.counter = 0
 
