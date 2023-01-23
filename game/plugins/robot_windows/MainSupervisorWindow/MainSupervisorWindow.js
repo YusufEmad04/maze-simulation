@@ -217,7 +217,7 @@ function updateConfig (data){
 
 function configChanged(){
 	let data = [1,0,0,0];
-	// data[0] = String(Number(document.getElementById("autoRemoveFiles").checked));
+//	data[0] = String(Number(document.getElementById("autoRemoveFiles").checked));
 	data[1] = String(Number(document.getElementById("autoLoP").checked));
 	data[2] = String(Number(document.getElementById("recording").checked));
 	data[3] = String(Number(document.getElementById("autoCam").checked));
