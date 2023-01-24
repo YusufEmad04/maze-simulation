@@ -15,17 +15,14 @@ class RunningRobot(MazeRobot):
         set_left_vel(self, 0)
         set_right_vel(self, 0)
         stop(self, 150)
-        # start_server(self)
+        start_server(self)
         while self.can_run_simulation:
 
-            # if self.current_status == "capture":
-            #     self.current_status = "stop"
-            #     # save images
-            #     cv2.imwrite("images/left{}.jpg".format(self.counter), self.left_image)
-            #     cv2.imwrite("images/right{}.jpg".format(self.counter), self.right_image)
+            if self.current_status == "capture":
+                self.current_status = "stop"
+                # save images
+                cv2.imwrite("left{}.jpg".format(self.counter), self.left_image)
+                cv2.imwrite("right{}.jpg".format(self.counter), self.right_image)
 
-            set_left_vel(self, 5)
-            set_right_vel(self, -5)
-
-            run_simulation(self)
+            run_simulation(self, 16)
 

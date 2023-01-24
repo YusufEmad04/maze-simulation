@@ -259,6 +259,10 @@ def get_color_sensor(robot: MazeRobot):
     robot.color_sensor_values[2] = robot.color_sensor.imageGetBlue(robot.image, 1, 0, 0)
 
 
+def get_gyro_values(robot: MazeRobot):
+    robot.gyro_values[0] = robot.gyro.getValues()[0]
+    robot.gyro_values[1] = robot.gyro.getValues()[1]
+    robot.gyro_values[2] = robot.gyro.getValues()[2]
 
 
 def get_cameras_values(robot: MazeRobot):
@@ -370,6 +374,7 @@ def get_all_values(robot: MazeRobot):
     # Other Sensors
     get_color_sensor(robot)
     get_cameras_values(robot)
+    get_gyro_values(robot)
     get_lidar(robot)
 
 
