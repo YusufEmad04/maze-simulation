@@ -13,7 +13,7 @@ max_speed = 6.28
 def run_simulation(robot: MazeRobot, step=32):
     if robot.can_run_simulation:
         result = robot.robot.step(step)
-        get_all_values(robot)
+        # get_all_values(robot)
         robot.counter += 1
         if result == -1:
             robot.can_run_simulation = False

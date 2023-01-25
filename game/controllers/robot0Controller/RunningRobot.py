@@ -18,11 +18,5 @@ class RunningRobot(MazeRobot):
         start_server(self)
         while self.can_run_simulation:
 
-            if self.current_status == "capture":
-                self.current_status = "stop"
-                # save images
-                cv2.imwrite("left{}.jpg".format(self.counter), self.left_image)
-                cv2.imwrite("right{}.jpg".format(self.counter), self.right_image)
-
             run_simulation(self, 16)
 

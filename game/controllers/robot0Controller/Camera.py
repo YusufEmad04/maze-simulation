@@ -81,7 +81,7 @@ def detect_hazards(sign_colored):
     if pixels > 10:
         # print("Organic Peroxide _ orange")
         sign_type="O"
-        return 
+        # return
 
     #mask red color
     lower_red = np.array ([197,0,98])
@@ -97,7 +97,7 @@ def detect_hazards(sign_colored):
     if pixels > 10:
         # print("Flammable Gas _ red")
         sign_type="F"
-        return
+        # return
 
     return sign_type
 

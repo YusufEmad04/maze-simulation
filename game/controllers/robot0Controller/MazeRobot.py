@@ -64,6 +64,8 @@ class MazeRobot:
         self.wanted_tile = [-1, -1]
 
         self.emitter = robot.getDevice("emitter")
+        self.receiver = robot.getDevice("receiver")
+        self.receiver.enable(TIME_STEP)
 
         self.maze_x_size = 0
         self.maze_y_size = 0
