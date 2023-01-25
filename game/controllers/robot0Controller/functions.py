@@ -13,7 +13,7 @@ max_speed = 6.28
 def run_simulation(robot: MazeRobot, step=32):
     if robot.can_run_simulation:
         result = robot.robot.step(step)
-        # get_all_values(robot)
+        get_all_values(robot)
         robot.counter += 1
         if result == -1:
             robot.can_run_simulation = False
@@ -109,39 +109,60 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
     elif direction == "left":
         robot.current_direction = (robot.current_direction - 1) % 4
 
-    # while robot.robot.step(32) != -1 and x >= 0:
-    #     get_all_values(robot)
-    #     turn_left(robot, speed)
-    #     # print("gyro values: ", robot.gyro_values)
-    #     # if x == 10:
-    #     #     y = 2
-    #     #     while robot.robot.step(32) != -1 and y >= 0:
-    #     #         y -= 1
-    #     #         stop(robot)
-    #     x -= 1
+    detected = False
+
+    y = 10
     for i in range(x):
+
+        if not detected:
+            if moving_cam(robot.left_image):
+                victim_type = full_detection(robot.left_image)
+                detected = True
+                print(f"Victim type = {victim_type}")  # send to the receiver
+                send_victim(robot, victim_type)
+                stop(robot, 150)
+
         turn_left(robot, speed)
 
         if robot.can_run_simulation:
             run_simulation(robot, step=16)
-        else:
-            return -1
+
+    print("rotation finished")
+    stop(robot, 120)
 
     # TEMP Add a break after turn
     # while robot.robot.step(32) != -1 and x >= -5:
     #     stop(robot)
     #     x -= 1
 
-
 def move_one_tile(robot: MazeRobot):
-    x = 28
-    while robot.robot.step(32) != -1 and x >= 0:
-        x -= 1
+    x = 28*2+2
+    if robot.color_case == "orange":
+        speed = 5.4464
+    else:
+        speed = 3.4898
+
+    detected = False
+    y = 0
+    for i in range(x):
+
+        if not detected:
+            if moving_cam(robot.right_image):
+                victim_type = full_detection(robot.right_image)
+                detected = True
+                print(f"Victim type = {victim_type}")  # send to the receiver
+                stop(robot, 150)
+                send_victim(robot, victim_type)
+
         move_forward(robot, 6.221)
-    stop(robot)
-    while x >= -7:
-        stop(robot)
-        x -= 1
+
+        if robot.can_run_simulation:
+            run_simulation(robot, step=16)
+        else:
+            return -1
+
+    print("tile finished")
+    stop(robot, 150)
 
     return True
 
@@ -521,6 +542,8 @@ def send_victim(robot: MazeRobot, vt):
     victim_type = bytes(vt, "utf-8")
     x = int(robot.gps.getValues()[0] * 100)
     y = int(robot.gps.getValues()[2] * 100)
+    print("X: {}, Y: {}".format(x, y))
+    print("vt: {}".format(victim_type))
     message = struct.pack("i i c", x, y, victim_type)
     robot.emitter.send(message)
 

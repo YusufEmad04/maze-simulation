@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 
 
-
 def sign_detection(img):
     #img= cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     #gray scale
