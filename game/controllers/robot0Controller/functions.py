@@ -6,6 +6,7 @@ from MazeRobot import MazeRobot
 from Camera import moving_cam
 from Camera import full_detection
 import struct
+from turtle import position  # TODO DELETE IT
 
 max_speed = 6.28
 
@@ -30,7 +31,7 @@ def arrived_at_coord(robot: MazeRobot, coord):
     if (coord[0] - offset <= robot.robot_pos[0] <= coord[0] + offset) and (
             coord[1] - offset <= robot.robot_pos[1] <= coord[1] + offset):
         return True
-    
+
     return False
 
 
@@ -95,7 +96,7 @@ def turn_90_time_step_with_camera(robot: MazeRobot, direction):
 
 
 def turn_90_time_step(robot: MazeRobot, direction="right"):
-    x = 19*2 + 2
+    x = 19 * 2 + 2
     # if robot.color_case == "orange":
     #     speed = 5.4464
     # else:
@@ -135,8 +136,10 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
     #     stop(robot)
     #     x -= 1
 
+
 def move_one_tile(robot: MazeRobot):
-    x = 28*2+2
+    # TODO too much stops
+    x = 28 * 2 + 2
     if robot.color_case == "orange":
         speed = 5.4464
     else:
@@ -151,8 +154,8 @@ def move_one_tile(robot: MazeRobot):
                 victim_type = full_detection(robot.right_image)
                 detected = True
                 print(f"Victim type = {victim_type}")  # send to the receiver
-                stop(robot, 150)
                 send_victim(robot, victim_type)
+                stop(robot, 150)
 
         move_forward(robot, 6.221)
 
@@ -189,7 +192,8 @@ def move_one_tile_gps(robot: MazeRobot):
 
     # Update abs_position
     robot.abs_pos = robot.wanted_tile
-    print("Abs_Pos: {}\nGPS:: {}\ndiff: {}\n___________".format(robot.abs_pos, robot.robot_pos, get_dist(robot.abs_pos, robot.robot_pos)))
+    print("Abs_Pos: {}\nGPS:: {}\ndiff: {}\n___________".format(robot.abs_pos, robot.robot_pos,
+                                                                get_dist(robot.abs_pos, robot.robot_pos)))
 
     # Wait
     x = 0
@@ -218,9 +222,9 @@ def move_one_tile_gps_with_camera(robot: MazeRobot, img):
         if moving_cam(robot.left_image):
             victim_type = full_detection(robot.left_image)
             print(f"detected {detected}")
-            if victim_type!="N" and detected == False:
+            if victim_type != "N" and detected == False:
                 detected = True
-                print(f"Victim type = {victim_type}") # send to the receiver
+                print(f"Victim type = {victim_type}")  # send to the receiver
                 stop(robot)
                 # time.sleep(0.7)
                 '''
@@ -232,7 +236,7 @@ def move_one_tile_gps_with_camera(robot: MazeRobot, img):
         print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
         move_forward(robot, 3)
         print("----------")
-    
+
     stop(robot)
     time.sleep(2)
 
@@ -247,7 +251,7 @@ def stop(robot: MazeRobot, t=10):
     set_left_vel(robot, 0)
     set_right_vel(robot, 0)
     if robot.can_run_simulation:
-        run_simulation(robot, step=16*t)
+        run_simulation(robot, step=16 * t)
     else:
         return -1
 
@@ -289,10 +293,10 @@ def get_gyro_values(robot: MazeRobot):
 def get_cameras_values(robot: MazeRobot):
     robot.left_image = np.frombuffer(robot.left_camera.getImage(), np.uint8).reshape(
         (robot.left_camera.getHeight(), robot.left_camera.getWidth(), 4))
-    robot.left_image = cv2.cvtColor(robot.left_image , cv2.COLOR_BGRA2BGR)
+    robot.left_image = cv2.cvtColor(robot.left_image, cv2.COLOR_BGRA2BGR)
     robot.right_image = np.frombuffer(robot.right_camera.getImage(), np.uint8).reshape(
         (robot.right_camera.getHeight(), robot.right_camera.getWidth(), 4))
-    robot.right_image = cv2.cvtColor(robot.right_image , cv2.COLOR_BGRA2BGR)
+    robot.right_image = cv2.cvtColor(robot.right_image, cv2.COLOR_BGRA2BGR)
 
     color_sensor_image = robot.color_sensor.getImage()
     robot.color_sensor_values[0] = robot.color_sensor.imageGetRed(color_sensor_image, 1, 0, 0)
@@ -495,8 +499,8 @@ def cam(img):
             print("victim detected")
     cv2.waitKey(1)
 
-def check_walls(robot: MazeRobot):
 
+def check_walls(robot: MazeRobot):
     half_wall_index = int(math.atan(0.5) * 512 / 2 * math.pi)
 
     front = (
@@ -515,6 +519,7 @@ def print_dict(d):
     for k, v in d.items():
         print(k, v)
 
+
 def print_lidar_triples(robot: MazeRobot):
     front_ray = (robot.lidar_data[2][0], 0)
     right_ray = (robot.lidar_data[2][128], 128)
@@ -527,9 +532,8 @@ def print_lidar_triples(robot: MazeRobot):
     print("left  {}   {}   {}, range: {}".format(*get_ray_triple(robot, left_ray)))
     print("-------------------------")
 
+
 def get_ray_triple(robot: MazeRobot, ray):
-
-
     if 9 <= ray[0] <= 15:
         range = 50
     else:
@@ -542,9 +546,11 @@ def send_victim(robot: MazeRobot, vt):
     victim_type = bytes(vt, "utf-8")
     x = int(robot.gps.getValues()[0] * 100)
     y = int(robot.gps.getValues()[2] * 100)
+    # TODO Remove prints
     print("X: {}, Y: {}".format(x, y))
     print("vt: {}".format(victim_type))
     message = struct.pack("i i c", x, y, victim_type)
+    stop(robot, 150)
     robot.emitter.send(message)
 
 
@@ -553,8 +559,6 @@ def turn_90_with_lidar(robot: MazeRobot):
         *[i for i in robot.lidar_data[2][128:]],
         *[i for i in robot.lidar_data[2][:128]],
     ]
-
-
 
     while not are_equal(start_arr, robot.lidar_data[2]):
 
@@ -573,6 +577,7 @@ def turn_90_with_lidar(robot: MazeRobot):
     set_left_vel(robot, 0)
     set_right_vel(robot, 0)
 
+
 def are_equal(a, b):
     for i in range(len(a)):
         if abs(a[i] - b[i]) > 0.5:
@@ -580,3 +585,5 @@ def are_equal(a, b):
     return True
 
 
+def send_end(robot: MazeRobot):
+    robot.emitter.send(bytes('E', "utf-8"))

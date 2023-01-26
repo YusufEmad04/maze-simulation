@@ -21,3 +21,4 @@ class RunningRobot(MazeRobot):
 
             run_simulation(self, 16)
 
+
