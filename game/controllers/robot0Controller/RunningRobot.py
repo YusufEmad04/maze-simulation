@@ -17,7 +17,7 @@ class RunningRobot(MazeRobot):
         stop(self, 150)
         # start_server(self)
         while self.can_run_simulation:
-            move_one_tile(self)
+            # move_one_tile(self)
 
             run_simulation(self, 16)
 
