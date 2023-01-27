@@ -116,12 +116,9 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
     for i in range(x):
 
         if not detected:
-            if moving_cam(robot.left_image):
-                victim_type = full_detection(robot.left_image)
+            # Detect with both cameras once
+            if check_camz(robot):
                 detected = True
-                print(f"Victim type = {victim_type}")  # send to the receiver
-                send_victim(robot, victim_type)
-                # stop(robot, 150)
 
         turn_left(robot, speed)
 
@@ -150,11 +147,9 @@ def move_one_tile(robot: MazeRobot):
     for i in range(x):
 
         if not detected:
-            if moving_cam(robot.right_image):
-                victim_type = full_detection(robot.right_image)
+            # Detect with both cameras once
+            if check_camz(robot):
                 detected = True
-                print(f"Victim type = {victim_type}")  # send to the receiver
-                send_victim(robot, victim_type)
 
         move_forward(robot, 6.221)
 
@@ -500,17 +495,16 @@ def cam(img):
 
 
 def check_walls(robot: MazeRobot):
-    half_wall_index = int(math.atan(0.5) * 512 / 2 * math.pi)
-
-    front = (
-        robot.lidar_data[-1]
-    )
+    right = 11 < robot.lidar_data[2][128 - 20] < 13.5 and 11 < robot.lidar_data[2][128 + 20] < 13.5
+    left = 11 < robot.lidar_data[2][384 - 20] < 13.5 and 11 < robot.lidar_data[2][384 + 20] < 13.5
+    front = 11 < robot.lidar_data[2][0 - 20] < 13.5 and 11 < robot.lidar_data[2][0 + 20] < 13.5
+    back = 11 < robot.lidar_data[2][256 - 20] < 13.5 and 11 < robot.lidar_data[2][256 + 20] < 13.5
 
     return {
-        "front": 3 < robot.lidar_data[2][0] < 6.1,
-        "right": 3 < robot.lidar_data[2][127] < 6.1,
-        "back": 3 < robot.lidar_data[2][255] < 6.1,
-        "left": 3 < robot.lidar_data[2][383] < 6.1,
+        "front": front,
+        "right": right,
+        "back": back,
+        "left": left
     }
 
 
@@ -546,12 +540,34 @@ def send_victim(robot: MazeRobot, vt):
     x = int(robot.gps.getValues()[0] * 100)
     y = int(robot.gps.getValues()[2] * 100)
     # TODO Remove prints
-    print("X: {}, Y: {}".format(x, y))
+    # print("X: {}, Y: {}".format(x, y))
     print("vt: {}".format(victim_type))
     message = struct.pack("i i c", x, y, victim_type)
-    stop(robot, 64)
-    robot.emitter.send(message)
     stop(robot, 100)
+    robot.emitter.send(message)
+    stop(robot, 64)
+
+
+def check_camz(robot: MazeRobot):
+    detected = False
+
+    # Detect with right camera
+    if moving_cam(robot.right_image) and check_walls(robot)["right"]:
+        detected = True
+        victim_type = full_detection(robot.right_image)
+        print("right")
+        send_victim(robot, victim_type)
+
+    # Detect with left camera
+    if moving_cam(robot.left_image) and check_walls(robot)["left"]:
+        detected = True
+        victim_type = full_detection(robot.left_image)
+        print("left")
+        send_victim(robot, victim_type)
+
+    return detected
+
+
 
 
 def turn_90_with_lidar(robot: MazeRobot):
