@@ -121,7 +121,7 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
                 detected = True
                 print(f"Victim type = {victim_type}")  # send to the receiver
                 send_victim(robot, victim_type)
-                stop(robot, 150)
+                # stop(robot, 150)
 
         turn_left(robot, speed)
 
@@ -146,7 +146,7 @@ def move_one_tile(robot: MazeRobot):
         speed = 3.4898
 
     detected = False
-    y = 0
+
     for i in range(x):
 
         if not detected:
@@ -155,7 +155,6 @@ def move_one_tile(robot: MazeRobot):
                 detected = True
                 print(f"Victim type = {victim_type}")  # send to the receiver
                 send_victim(robot, victim_type)
-                stop(robot, 150)
 
         move_forward(robot, 6.221)
 
@@ -165,7 +164,7 @@ def move_one_tile(robot: MazeRobot):
             return -1
 
     print("tile finished")
-    stop(robot, 150)
+    # stop(robot, 150)
 
     return True
 
@@ -550,8 +549,9 @@ def send_victim(robot: MazeRobot, vt):
     print("X: {}, Y: {}".format(x, y))
     print("vt: {}".format(victim_type))
     message = struct.pack("i i c", x, y, victim_type)
-    stop(robot, 150)
+    stop(robot, 64)
     robot.emitter.send(message)
+    stop(robot, 100)
 
 
 def turn_90_with_lidar(robot: MazeRobot):
