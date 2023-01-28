@@ -44,9 +44,157 @@ def set_right_vel(robot: MazeRobot, v):
 
 
 def move_forward(robot: MazeRobot, v):
-    set_left_vel(robot, -v)
-    set_right_vel(robot, -v)
 
+    walls = check_walls(robot)
+    index = None
+
+    if walls["right"]:
+        index = 128
+    elif walls["left"]:
+        index = 384
+
+    if not index:
+        set_left_vel(robot, v)
+        set_right_vel(robot, v)
+    else:
+        rays = []
+        for i in robot.lidar_data[2][index - 30 : index + 31]:
+            rays.append((i, robot.lidar_data[2].index(i)))
+
+        # get min distance
+        min_ray = min(rays, key=lambda x: x[0])
+        ratio = abs(index - min_ray[1]) / 30
+
+        if index == 128:
+
+            if min_ray[1] > index:
+                set_left_vel(robot, v)
+                set_right_vel(robot, v * (1 - ratio))
+            else:
+                set_left_vel(robot, v * (1 - ratio))
+                set_right_vel(robot, v)
+
+        elif index == 384:
+            if min_ray[1] > index:
+                set_left_vel(robot, v)
+                set_right_vel(robot, v * (1 - ratio))
+            else:
+                set_left_vel(robot, v * (1 - ratio))
+                set_right_vel(robot, v)
+
+
+def move_forward2(robot: MazeRobot, v):
+    walls = check_walls(robot)
+    index = None
+
+    if walls["right"] and walls["left"]:
+        left_rays_diff = abs(robot.lidar_data[2][384 + 20] - robot.lidar_data[2][384 - 20])
+        right_rays_diff = abs(robot.lidar_data[2][128 + 20] - robot.lidar_data[2][128 - 20])
+
+        if left_rays_diff > right_rays_diff:
+            index = 128
+        else:
+            index = 384
+    elif walls["right"]:
+        index = 128
+    elif walls["left"]:
+        index = 384
+
+    if not index:
+
+        set_left_vel(robot, v)
+        set_right_vel(robot, v)
+    else:
+        if index == 128:
+            ray1 = robot.lidar_data[2][index - 20]
+            ray2 = robot.lidar_data[2][index + 20]
+
+            rays = []
+            for i in robot.lidar_data[2][index - 30 : index + 31]:
+                rays.append((i, robot.lidar_data[2].index(i)))
+
+            # get min distance
+            min_ray = min(rays, key=lambda x: x[0])
+
+            if min_ray[0] < 11:
+                set_left_vel(robot, v * 0.7)
+                set_right_vel(robot, v)
+
+            else:
+
+                if ray1 > ray2:
+                    set_left_vel(robot, v)
+                    set_right_vel(robot, v * 0.5)
+                    # set_right_vel(robot, v * (1 - ratio))
+                else:
+                    # set_left_vel(robot, v * (1 - ratio))
+                    set_left_vel(robot, v * 0.5)
+                    set_right_vel(robot, v)
+
+
+        elif index == 384:
+            ray1 = robot.lidar_data[2][index - 20]
+            ray2 = robot.lidar_data[2][index + 20]
+
+            rays = []
+            for i in robot.lidar_data[2][index - 30 : index + 31]:
+                rays.append((i, robot.lidar_data[2].index(i)))
+
+            # get min distance
+            min_ray = min(rays, key=lambda x: x[0])
+
+            if min_ray[0] < 11:
+                set_left_vel(robot, v)
+                set_right_vel(robot, v * 0.7)
+
+            else:
+
+                if ray1 > ray2:
+                    set_left_vel(robot, v)
+                    # set_right_vel(robot, v * (1 - ratio))
+                    set_right_vel(robot, v * 0.5)
+                else:
+                    # set_left_vel(robot, v * (1 - ratio))
+                    set_left_vel(robot, v * 0.5)
+                    set_right_vel(robot, v)
+
+def move_forward3(robot: MazeRobot, v):
+
+    walls = check_walls(robot)
+    index = None
+
+    if walls["right"]:
+        index = 128
+    elif walls["left"]:
+        index = 384
+
+    if not index:
+        set_left_vel(robot, v)
+        set_right_vel(robot, v)
+
+    else:
+        rays = []
+        for i in robot.lidar_data[2][index - 30 : index + 31]:
+            rays.append((i, robot.lidar_data[2].index(i)))
+
+        # get min distance
+        min_ray = min(rays, key=lambda x: x[0])
+        print(min_ray)
+
+        if index == 128:
+            if min_ray[0] > 11.54:
+                set_left_vel(robot, v)
+                set_right_vel(robot, v*0.5)
+            else:
+                set_left_vel(robot, v*0.5)
+                set_right_vel(robot, v)
+        else:
+            if min_ray[0] > 11.54:
+                set_left_vel(robot, v*0.5)
+                set_right_vel(robot, v)
+            else:
+                set_left_vel(robot, v)
+                set_right_vel(robot, v*0.5)
 
 def turn_right(robot: MazeRobot, v):
     set_left_vel(robot, -v)
@@ -116,11 +264,8 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
     for i in range(x):
 
         if not detected:
-            if moving_cam(robot.left_image):
-                victim_type = full_detection(robot.left_image)
+            if check_camz(robot):
                 detected = True
-                print(f"Victim type = {victim_type}")  # send to the receiver
-                send_victim(robot, victim_type)
                 # stop(robot, 150)
 
         turn_left(robot, speed)
@@ -150,11 +295,8 @@ def move_one_tile(robot: MazeRobot):
     for i in range(x):
 
         if not detected:
-            if moving_cam(robot.right_image):
-                victim_type = full_detection(robot.right_image)
+            if check_camz(robot):
                 detected = True
-                print(f"Victim type = {victim_type}")  # send to the receiver
-                send_victim(robot, victim_type)
 
         move_forward(robot, 6.221)
 
@@ -500,17 +642,35 @@ def cam(img):
 
 
 def check_walls(robot: MazeRobot):
-    half_wall_index = int(math.atan(0.5) * 512 / 2 * math.pi)
+    right_rays_in_range = 3 < robot.lidar_data[2][128 - 20] < 17 and 3 < robot.lidar_data[2][128 + 20] < 17
+    left_rays_in_range = 3 < robot.lidar_data[2][384 - 20] < 17 and 3 < robot.lidar_data[2][384 + 20] < 17
+    front_rays_in_range = 3 < robot.lidar_data[2][0 - 20] < 17 and 3 < robot.lidar_data[2][0 + 20] < 17
+    back_rays_in_range = 3 < robot.lidar_data[2][256 - 20] < 17 and 3 < robot.lidar_data[2][256 + 20] < 17
 
-    front = (
-        robot.lidar_data[-1]
-    )
+    right_difference1 = abs(robot.lidar_data[2][128] - robot.lidar_data[2][128 + 40])
+    right_difference2 = abs(robot.lidar_data[2][128] - robot.lidar_data[2][128 - 40])
+
+    left_difference1 = abs(robot.lidar_data[2][384] - robot.lidar_data[2][384 + 40])
+    left_difference2 = abs(robot.lidar_data[2][384] - robot.lidar_data[2][384 - 40])
+
+    front_difference1 = abs(robot.lidar_data[2][0] - robot.lidar_data[2][0 + 40])
+    front_difference2 = abs(robot.lidar_data[2][0] - robot.lidar_data[2][0 - 40])
+
+    back_difference1 = abs(robot.lidar_data[2][256] - robot.lidar_data[2][256 + 40])
+    back_difference2 = abs(robot.lidar_data[2][256] - robot.lidar_data[2][256 - 40])
+
+    right = right_rays_in_range and right_difference1 < 10 and right_difference2 < 10
+    left = left_rays_in_range and left_difference1 < 10 and left_difference2 < 10
+    front = front_rays_in_range
+    back = back_rays_in_range
+
+    # print("right rays: {}   {}".format(robot.lidar_data[2][128 - 20], robot.lidar_data[2][128 + 20]))
 
     return {
-        "front": 3 < robot.lidar_data[2][0] < 6.1,
-        "right": 3 < robot.lidar_data[2][127] < 6.1,
-        "back": 3 < robot.lidar_data[2][255] < 6.1,
-        "left": 3 < robot.lidar_data[2][383] < 6.1,
+        "front": front,
+        "right": right,
+        "back": back,
+        "left": left
     }
 
 
@@ -546,36 +706,32 @@ def send_victim(robot: MazeRobot, vt):
     x = int(robot.gps.getValues()[0] * 100)
     y = int(robot.gps.getValues()[2] * 100)
     # TODO Remove prints
-    print("X: {}, Y: {}".format(x, y))
+    # print("X: {}, Y: {}".format(x, y))
     print("vt: {}".format(victim_type))
     message = struct.pack("i i c", x, y, victim_type)
-    stop(robot, 64)
-    robot.emitter.send(message)
     stop(robot, 100)
+    robot.emitter.send(message)
+    stop(robot, 64)
 
 
-def turn_90_with_lidar(robot: MazeRobot):
-    start_arr = [
-        *[i for i in robot.lidar_data[2][128:]],
-        *[i for i in robot.lidar_data[2][:128]],
-    ]
+def turn_90_with_lidar(robot: MazeRobot, direction):
+    if direction == "right":
+        speed = -5
+    else:
+        speed = 5
 
-    while not are_equal(start_arr, robot.lidar_data[2]):
+    for i in range(17):
+        set_left_vel(robot, 6)
+        set_right_vel(robot, -6)
+        run_simulation(robot, 16)
 
-        print("target: {}".format(start_arr[:10]))
-        print("current: {}".format(robot.lidar_data[2][:10]))
-        print("-------------------------")
 
-        set_left_vel(robot, -1)
-        set_right_vel(robot, 1)
+    rays = []
+    for i in robot.lidar_data[2]:
+        rays.append(i)
 
-        if robot.can_run_simulation:
-            run_simulation(robot, 16)
-        else:
-            return -1
 
-    set_left_vel(robot, 0)
-    set_right_vel(robot, 0)
+    pass
 
 
 def are_equal(a, b):
@@ -587,3 +743,23 @@ def are_equal(a, b):
 
 def send_end(robot: MazeRobot):
     robot.emitter.send(bytes('E', "utf-8"))
+
+
+def check_camz(robot: MazeRobot):
+    detected = False
+
+    # Detect with right camera
+    if moving_cam(robot.right_image) and check_walls(robot)["right"]:
+        detected = True
+        victim_type = full_detection(robot.right_image)
+        print("right")
+        send_victim(robot, victim_type)
+
+    # Detect with left camera
+    if moving_cam(robot.left_image) and check_walls(robot)["left"]:
+        detected = True
+        victim_type = full_detection(robot.left_image)
+        print("left")
+        send_victim(robot, victim_type)
+
+    return detected
