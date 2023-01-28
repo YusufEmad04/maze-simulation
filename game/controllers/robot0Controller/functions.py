@@ -36,11 +36,11 @@ def arrived_at_coord(robot: MazeRobot, coord):
 
 
 def set_left_vel(robot: MazeRobot, v):
-    robot.left_wheel.setVelocity(-v)
+    robot.left_wheel.setVelocity(v)
 
 
 def set_right_vel(robot: MazeRobot, v):
-    robot.right_wheel.setVelocity(-v)
+    robot.right_wheel.setVelocity(v)
 
 
 def move_forward(robot: MazeRobot, v):
@@ -253,14 +253,13 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
     speed = 3.48985044
 
     if direction == "right":
-        speed = -speed
         robot.current_direction = (robot.current_direction + 1) % 4
     elif direction == "left":
+        speed = -speed
         robot.current_direction = (robot.current_direction - 1) % 4
 
     detected = False
 
-    y = 10
     for i in range(x):
 
         if not detected:
@@ -274,7 +273,7 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
             run_simulation(robot, step=16)
 
     print("rotation finished")
-    stop(robot, 120)
+    # stop(robot, 120)
 
     # TEMP Add a break after turn
     # while robot.robot.step(32) != -1 and x >= -5:
@@ -282,8 +281,31 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
     #     x -= 1
 
 
+def initialize_dir(robot: MazeRobot):
+    start = robot.robot_pos.copy()
+    t = 1
+    while robot.can_run_simulation and t >= 0:
+        move_forward(robot, 6)
+        t -= 1
+
+        run_simulation(robot, 16)
+
+    x_diff = robot.robot_pos[0] - start[0]
+    y_diff = robot.robot_pos[1] - start[1]
+
+    if abs(x_diff) > abs(y_diff):
+        if x_diff > 0:
+            robot.current_direction = 1
+        else:
+            robot.current_direction = 3
+    else:
+        if y_diff > 0:
+            robot.current_direction = 2
+        else:
+            robot.current_direction = 0
+
+
 def move_one_tile(robot: MazeRobot):
-    # TODO too much stops
     x = 28 * 2 + 2
     if robot.color_case == "orange":
         speed = 5.4464
@@ -298,7 +320,7 @@ def move_one_tile(robot: MazeRobot):
             if check_camz(robot):
                 detected = True
 
-        move_forward(robot, 6.221)
+        move_forward2(robot, 6.221)
 
         if robot.can_run_simulation:
             run_simulation(robot, step=16)
@@ -312,38 +334,55 @@ def move_one_tile(robot: MazeRobot):
 
 
 def move_one_tile_gps(robot: MazeRobot):
+    """
+    0: front
+    1: right
+    2: back
+    3: left
+    """
     # Get wanted position
-    if robot.current_direction in [0, 2]:
-        sign = -1
-    else:
+    if robot.current_direction in [1, 2]:
         sign = 1
+    else:
+        sign = -1
+
+    detected = False
 
     if robot.current_direction in [0, 2]:
-        robot.wanted_tile = [robot.abs_pos[0] + sign * 12, robot.abs_pos[1]]
+        wanted_y = robot.abs_pos[1] + 12 * sign
+
+        while abs(robot.robot_pos[1] - wanted_y) >= 0.4:
+            # Detect victim once
+            if not detected:
+                if check_camz(robot):
+                    detected = True
+
+            # Move one tile
+            if robot.can_run_simulation:
+                move_forward2(robot, 6.221)
+            run_simulation(robot)
+
+        robot.abs_pos = (robot.abs_pos[0], wanted_y)
+        print("Arrived Y")
+        # stop(robot, 150)
+
     else:
-        robot.wanted_tile = [robot.abs_pos[0], robot.abs_pos[1] + sign * 12]
+        wanted_x = robot.abs_pos[0] + 12 * sign
 
-    # Loop until arrived at wanted position
-    while not arrived_at_coord(robot, robot.wanted_tile):
-        if robot.can_run_simulation:
-            print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
-            move_forward(robot, 6.221)
-            # print("----------")
-        run_simulation(robot)
+        while abs(robot.robot_pos[0] - wanted_x) >= 0.4:
+            # Detect victim once
+            if not detected:
+                if check_camz(robot):
+                    detected = True
 
-    # Update abs_position
-    robot.abs_pos = robot.wanted_tile
-    print("Abs_Pos: {}\nGPS:: {}\ndiff: {}\n___________".format(robot.abs_pos, robot.robot_pos,
-                                                                get_dist(robot.abs_pos, robot.robot_pos)))
+            # Move one tile
+            if robot.can_run_simulation:
+                move_forward2(robot, 6.221)
+            run_simulation(robot)
 
-    # Wait
-    x = 0
-    while x <= 60:
-        if robot.can_run_simulation:
-            stop(robot)
-            x += 2
-        run_simulation(robot)
-    return True
+        robot.abs_pos = (wanted_x, robot.abs_pos[1])
+        print("Arrived x")
+        # stop(robot, 150)
 
 
 def move_one_tile_gps_with_camera(robot: MazeRobot, img):
@@ -644,7 +683,7 @@ def cam(img):
 def check_walls(robot: MazeRobot):
     right_rays_in_range = 3 < robot.lidar_data[2][128 - 20] < 17 and 3 < robot.lidar_data[2][128 + 20] < 17
     left_rays_in_range = 3 < robot.lidar_data[2][384 - 20] < 17 and 3 < robot.lidar_data[2][384 + 20] < 17
-    front_rays_in_range = 3 < robot.lidar_data[2][0 - 20] < 17 and 3 < robot.lidar_data[2][0 + 20] < 17
+    front_rays_in_range = robot.lidar_data[2][0 - 20] < 17 and robot.lidar_data[2][0 + 20] < 17
     back_rays_in_range = 3 < robot.lidar_data[2][256 - 20] < 17 and 3 < robot.lidar_data[2][256 + 20] < 17
 
     right_difference1 = abs(robot.lidar_data[2][128] - robot.lidar_data[2][128 + 40])
@@ -745,21 +784,38 @@ def send_end(robot: MazeRobot):
     robot.emitter.send(bytes('E', "utf-8"))
 
 
-def check_camz(robot: MazeRobot):
-    detected = False
+def check_camz(robot: MazeRobot, _detected=False):
+
+
 
     # Detect with right camera
     if moving_cam(robot.right_image) and check_walls(robot)["right"]:
-        detected = True
+        _detected = True
         victim_type = full_detection(robot.right_image)
-        print("right")
+        # print("right")
         send_victim(robot, victim_type)
 
     # Detect with left camera
     if moving_cam(robot.left_image) and check_walls(robot)["left"]:
-        detected = True
+        _detected = True
         victim_type = full_detection(robot.left_image)
-        print("left")
+        # print("left")
         send_victim(robot, victim_type)
 
-    return detected
+    return _detected
+
+
+def navigate(robot: MazeRobot):
+    """
+    if wall right.... go forward
+    if no wall right.... go right
+    if wall right, forward.... go left
+    """
+    if not check_walls(robot)["right"]:
+        turn_90_time_step(robot, "right")
+        move_one_tile_gps(robot)
+    else:
+        if not check_walls(robot)["front"]:
+            move_one_tile_gps(robot)
+        else:
+            turn_90_time_step(robot, "left")
