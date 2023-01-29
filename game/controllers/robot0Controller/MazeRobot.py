@@ -50,6 +50,9 @@ class MazeRobot:
         self.directions = ["front", "right", "back", "left"]
         self.current_direction = 0
 
+        self.hole_direction_pos = [-1, [0, 0]]      # Save direction of hole relative to robot and its absolute position
+                                                   # if no hole, dir = -1
+
         self.left_encoder = self.left_wheel.getPositionSensor()  # Encoder initialization
         self.right_encoder = self.right_wheel.getPositionSensor()
         self.left_encoder.enable(TIME_STEP)
