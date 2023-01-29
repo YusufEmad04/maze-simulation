@@ -39,10 +39,15 @@ def sign_detection(img):
         image_detected = False
         for c in cnts:
             [x,y,w,h] = cv2.boundingRect(c)
-            if w> 18 and h>18 and x>5 and y<25:
+            if w> 18 and h>18 and (5 < x < 20) and y<25:
+                img_copy = img.copy()
+                # draw bounding box
+                cv2.rectangle(img_copy, (x, y), (x + w, y + h), (36,255,12), 2)
+                # save the image
+                cv2.imwrite("images/sign{}.png".format(counter), img_copy)
                 #crop the image to be contour co-ordinates
-                sign=thresh[y:y+w , x:x+w] #crop thresh img
-                sign_colored=img[y:y+w , x:x+w] #crop blurred original img
+                sign=thresh[y:y+h , x:x+w] #crop thresh img
+                sign_colored=img[y:y+h , x:x+w] #crop blurred original img
                 # cv2.imshow("sign" , sign)
                 # cv2.imshow("sign colored" , sign_colored)
                 image_detected = True
@@ -88,8 +93,8 @@ def detect_hazards(sign_colored):
         # return
 
     #mask red color
-    lower_red = np.array ([197,0,98])
-    upper_red= np.array([198,100,118])
+    lower_red = np.array ([185,0,0])
+    upper_red= np.array([205,100,118])
 
     red_mask = cv2.inRange(bottom ,lower_red,upper_red)
     # cv2.imshow("red mask" , red_mask)
@@ -97,8 +102,14 @@ def detect_hazards(sign_colored):
     #check if the red color exists in the img
     pixels = cv2.countNonZero(red_mask)
     # print(f"red pixels= {pixels}")
+    #
+    # # save red mask
+    # cv2.imwrite("images/red_mask{}.png".format(counter), red_mask)
+    #
+    # # save bottom
+    # cv2.imwrite("images/bottom{}.png".format(counter), bottom)
 
-    if pixels > 10:
+    if pixels > 25:
         # print("Flammable Gas _ red")
         sign_type="F"
         # return
@@ -111,6 +122,8 @@ def letter_detection(sign):
     #inverse the img to color the letter(if the img is human) in white to be able to find contours in it
     letter= cv2.bitwise_not(sign)
     # cv2.imshow("letter" , letter)
+    # save letter
+    cv2.imwrite("images/letter{}.png".format(counter), letter)
 
     #filling the background of the img in black
     h,w=letter.shape
@@ -177,41 +190,47 @@ def letter_detection(sign):
     return letter_type, bottom
 
 
-def hazard_sign_detection(bottom):
+def hazard_sign_detection(sign):
 
     #make the background in gray
     sign_type="N"
-    h,w=bottom.shape
-    for x in range(0,h):
-        for y in range (0,w):
-            pixel = bottom[x,y]
-            if pixel>200:
-                break
-            else:
-                bottom[x,y] = (120)
+    h,w=sign.shape
+    # get bottom half of the image
+    bottom=sign[int(h * 0.5):, int(w * 0.3):int(w * 0.85)]
+    # save bottom
+    cv2.imwrite("images/bottom{}.png".format(counter), bottom)
+    # for x in range(0,h):
+    #     for y in range (0,w):
+    #         pixel = bottom[x,y]
+    #         if pixel>200:
+    #             break
+    #         else:
+    #             bottom[x,y] = (120)
+    #
+    #     for y_inversed in range(w-1,0, -1):
+    #         pixel = bottom[x,y_inversed]
+    #
+    #         if pixel >200:
+    #             break
+    #         else:
+    #             bottom[x,y_inversed] = (120)
+    #
+    # #count the white and black pixels
+    # white_pixel=0
+    # black_pixel=0
+    #
+    # for x in range(0,h):
+    #     for y in range (0,w):
+    #         pixel = bottom[x,y]
+    #         if pixel>200:
+    #             white_pixel+=1
+    #         elif pixel<20:
+    #             black_pixel+=1
 
-        for y_inversed in range(w-1,0, -1):
-            pixel = bottom[x,y_inversed]
-        
-            if pixel >200:
-                break
-            else:
-                bottom[x,y_inversed] = (120)
-     
-    #count the white and black pixels
-    white_pixel=0
-    black_pixel=0
-
-    for x in range(0,h):
-        for y in range (0,w):
-            pixel = bottom[x,y]
-            if pixel>200:
-                white_pixel+=1
-            elif pixel<20:
-                black_pixel+=1
-
+    white_pixel = cv2.countNonZero(bottom)
+    black_pixel = bottom.size - white_pixel
     #compare between the two numbers
-    # print(f"white pixels: {white_pixel} black pixels: {black_pixel}")
+    print(f"white pixels: {white_pixel} black pixels: {black_pixel}")
 
     if(black_pixel>white_pixel):
         # print("Corrosive_Black")
@@ -237,7 +256,7 @@ def full_detection(img):
     letter_type, bottom = letter_detection(sign)
     if letter_type !="N":
         return letter_type
-    sign_type = hazard_sign_detection(bottom)
+    sign_type = hazard_sign_detection(sign)
     return sign_type
 
                 
