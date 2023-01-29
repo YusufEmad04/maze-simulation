@@ -2,8 +2,13 @@ from MazeRobot import MazeRobot
 import cv2
 import numpy as np
 
+counter = 0
+
 
 def sign_detection(img):
+    global counter
+    counter += 1
+
     #img= cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     #gray scale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -11,11 +16,11 @@ def sign_detection(img):
     blur = cv2.blur(gray,(1,1))
     blur_origin = cv2.blur(img,(1,1))
     hsv = cv2.cvtColor(blur_origin, cv2.COLOR_RGB2HSV)
-    cv2.imshow("HSV" , hsv)
+    # cv2.imshow("HSV" , hsv)
   
     #binary thresholding
     ret, thresh = cv2.threshold(blur, 135, 255, cv2.THRESH_BINARY) #135
-    cv2.imshow("blur" , blur)
+    # cv2.imshow("blur" , blur)
 
     #finding contours (white frame) in thresholded image
     cnts,_ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -24,7 +29,7 @@ def sign_detection(img):
     # print("number of contours found" , len(cnts))
     if(len(cnts) > 0):
     #cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-        cv2.imshow("thresh",thresh)
+        # cv2.imshow("thresh",thresh)
         
         
         #get co-ordinates of the contour
@@ -33,13 +38,13 @@ def sign_detection(img):
         
         image_detected = False
         for c in cnts:
-            [x,y,w,h] = cv2.boundingRect(cnts[0])
-            if x in range(3, 33):
+            [x,y,w,h] = cv2.boundingRect(c)
+            if w> 18 and h>18 and x>5 and y<25:
                 #crop the image to be contour co-ordinates
                 sign=thresh[y:y+w , x:x+w] #crop thresh img
                 sign_colored=img[y:y+w , x:x+w] #crop blurred original img
-                cv2.imshow("sign" , sign)
-                cv2.imshow("sign colored" , sign_colored)
+                # cv2.imshow("sign" , sign)
+                # cv2.imshow("sign colored" , sign_colored)
                 image_detected = True
                 break
         return sign , sign_colored , image_detected
@@ -87,7 +92,7 @@ def detect_hazards(sign_colored):
     upper_red= np.array([198,100,118])
 
     red_mask = cv2.inRange(bottom ,lower_red,upper_red)
-    cv2.imshow("red mask" , red_mask)
+    # cv2.imshow("red mask" , red_mask)
 
     #check if the red color exists in the img
     pixels = cv2.countNonZero(red_mask)
@@ -105,7 +110,7 @@ def letter_detection(sign):
 
     #inverse the img to color the letter(if the img is human) in white to be able to find contours in it
     letter= cv2.bitwise_not(sign)
-    cv2.imshow("letter" , letter)
+    # cv2.imshow("letter" , letter)
 
     #filling the background of the img in black
     h,w=letter.shape
