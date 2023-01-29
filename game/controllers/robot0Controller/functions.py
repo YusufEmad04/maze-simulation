@@ -11,11 +11,10 @@ from turtle import position  # TODO DELETE IT
 max_speed = 6.28
 
 
-def run_simulation(robot: MazeRobot, step=32):
+def run_simulation(robot: MazeRobot, step=16):
     if robot.can_run_simulation:
         result = robot.robot.step(step)
         get_all_values(robot)
-        print(robot.hole_direction_pos[0])
         robot.counter += 1
         if result == -1:
             robot.can_run_simulation = False
@@ -277,6 +276,7 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
         update_hole(robot, 1)
     else:
         update_hole(robot, 2)
+
     print("rotation finished")
     # stop(robot, 120)
 
@@ -371,7 +371,7 @@ def move_one_tile_gps(robot: MazeRobot):
 
         robot.abs_pos = (robot.abs_pos[0], wanted_y)
         print("Arrived Y")
-
+        # stop(robot, 150)
 
     else:
         wanted_x = robot.abs_pos[0] + 12 * sign
@@ -389,9 +389,8 @@ def move_one_tile_gps(robot: MazeRobot):
 
         robot.abs_pos = (wanted_x, robot.abs_pos[1])
         print("Arrived x")
-
         update_hole(robot)
-
+        # stop(robot, 150)
 
 
 def move_one_tile_gps_with_camera(robot: MazeRobot, img):
@@ -587,10 +586,10 @@ def get_all_values(robot: MazeRobot):
 
     # Other Sensors
     get_color_sensor(robot)
-    viewColour(robot)
     get_cameras_values(robot)
     get_gyro_values(robot)
     get_lidar(robot)
+    viewColour(robot)
 
 
 def map_updater(robot: MazeRobot, x, z):
@@ -640,12 +639,13 @@ def map_updater(robot: MazeRobot, x, z):
 # # Avoid holes and swamps by looking at the RBG colour of the camera
 def viewColour(robot: MazeRobot):
     color_case = ""
-    r,g,b = robot.color_sensor_values
+    r, g, b = robot.color_sensor_values
+
     if (r >= 200) and (g >= 200) and (b >= 200):
-        # print("White")
+        print("White")
         robot.color_case = "white"
     elif (r >= 230) and (g >= 200) and (g <= 240) and (b > 110) and (b <= 160):
-        # print("Orange")
+        print("Orange")
         robot.color_case = "orange"
     elif (r < 70) and (g < 70) and (b < 70):
         print("Black")
@@ -677,7 +677,6 @@ def set_hole_location(robot: MazeRobot):
 # TODO Sequence to break move_one_tile when hole found
 def avoid_hole(robot: MazeRobot):
     pass
-
 
 
 def cam(img):
@@ -856,7 +855,6 @@ def check_camz(robot: MazeRobot, _detected=False):
 
     return _detected
 
-            
 def update_hole(robot: MazeRobot, dir=0):
     # dir = ["front", "right", " left"]
     if get_dist(robot.robot_pos, robot.hole_direction_pos[1]) >= 18:
@@ -868,18 +866,16 @@ def update_hole(robot: MazeRobot, dir=0):
             robot.hole_direction_pos[0] = (robot.hole_direction_pos[0] - 1) % 4
         else:
             robot.hole_direction_pos[0] = (robot.hole_direction_pos[0] + 1) % 4
-
-
 def navigate(robot: MazeRobot):
     """
+
     if no wall right.... go right
     if wall right.... go forward
     if wall right, forward.... go left
-    if hole...simulate it as wall and change dir when turn
+    if hole...simulate it as wall and change dir when turning
     """
-    print("DATA:",robot.hole_direction_pos)
+    print("DATA:", robot.hole_direction_pos)
     print(check_holes(robot))
-
     if not check_walls(robot)["right"] and not check_holes(robot)["right"]:
         turn_90_time_step(robot, "right")
         # move_one_tile_gps(robot)
@@ -887,7 +883,5 @@ def navigate(robot: MazeRobot):
     else:
         if not check_walls(robot)["front"] and not check_holes(robot)["front"]:
             move_one_tile_gps(robot)
-            # move_one_tile(robot)
         else:
             turn_90_time_step(robot, "left")
-

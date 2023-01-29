@@ -16,14 +16,11 @@ class RunningRobot(MazeRobot):
         set_right_vel(self, 0)
         stop(self, 150)
         initialize_dir(self)
-
         # start_server(self)
         while self.can_run_simulation:
-            # if viewColour(self) == "black":
-            #      turn_90_time_step(self)
-            # move_one_tile_gps(self)
             navigate(self)
-            
+
+
             run_simulation(self, 16)
 
 
