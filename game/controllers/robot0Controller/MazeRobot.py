@@ -82,5 +82,15 @@ class MazeRobot:
 
         self.current_status = "stop"
 
+        self.start_pos = [0, 0]
+
+        self.initial_map_pos = [None, None]
+
         self.counter = 0
+
+        self.detected_signs = dict()
+
+        self.holes = dict()
+
+        self.next_tile = []
 
