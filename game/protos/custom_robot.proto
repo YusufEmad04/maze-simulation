@@ -503,7 +503,7 @@ Robot {
             }
             
             Transform {
-            translation 0.029 0.0305 0.0
+            translation 0.025 0.0305 0.0
             rotation -1 0 0 1.57
             children [
                 Camera {
@@ -553,7 +553,7 @@ Robot {
             ]
             }
             Transform {
-            translation -0.029 0.0305 0.0
+            translation -0.025 0.0305 0.0
             rotation 0 0.71 0.71 3.14
             children [
                 Camera {
@@ -603,7 +603,7 @@ Robot {
             ]
             }
             Transform {
-            translation 0.0 0.010499999999999999 -0.037
+            translation 0.0 0.014499999999999999 -0.037
             rotation -0.71 0 0.71 3.14
             children [
                 Transform {
