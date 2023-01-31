@@ -19,7 +19,8 @@ class RunningRobot(MazeRobot):
         # start_server(self)
         while self.can_run_simulation:
             navigate(self)
-
+            # set_left_vel(self, 0)
+            # set_right_vel(self, 0)
 
             run_simulation(self, 16)
 

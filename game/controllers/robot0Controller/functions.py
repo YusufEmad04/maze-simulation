@@ -15,6 +15,11 @@ def run_simulation(robot: MazeRobot, step=16):
     if robot.can_run_simulation:
         result = robot.robot.step(step)
         get_all_values(robot)
+        print("current dir: {}".format(robot.current_direction))
+        print("robot pos: ", robot.robot_pos)
+        print("next tile: ", robot.next_tile)
+        print_dict(check_walls(robot))
+        print("-----------------")
         robot.counter += 1
         if result == -1:
             robot.can_run_simulation = False
@@ -48,9 +53,9 @@ def move_forward(robot: MazeRobot, v):
     walls = check_walls(robot)
     index = None
 
-    if walls["right"]:
+    if walls["right_move_forward"]:
         index = 128
-    elif walls["left"]:
+    elif walls["left_move_forward"]:
         index = 384
 
     if not index:
@@ -87,7 +92,7 @@ def move_forward2(robot: MazeRobot, v):
     walls = check_walls(robot)
     index = None
 
-    if walls["right"] and walls["left"]:
+    if walls["right_move_forward"] and walls["left_move_forward"]:
         left_rays_diff = abs(robot.lidar_data[2][384 + 20] - robot.lidar_data[2][384 - 20])
         right_rays_diff = abs(robot.lidar_data[2][128 + 20] - robot.lidar_data[2][128 - 20])
 
@@ -95,9 +100,9 @@ def move_forward2(robot: MazeRobot, v):
             index = 128
         else:
             index = 384
-    elif walls["right"]:
+    elif walls["right_move_forward"]:
         index = 128
-    elif walls["left"]:
+    elif walls["left_move_forward"]:
         index = 384
 
     if not index:
@@ -163,9 +168,9 @@ def move_forward3(robot: MazeRobot, v):
     walls = check_walls(robot)
     index = None
 
-    if walls["right"]:
+    if walls["right_move_forward"]:
         index = 128
-    elif walls["left"]:
+    elif walls["left_move_forward"]:
         index = 384
 
     if not index:
@@ -366,7 +371,7 @@ def move_one_tile_gps(robot: MazeRobot):
             # Move one tile
             if robot.can_run_simulation:
                 move_forward2(robot, 6.221)
-                update_hole(robot)
+                # update_hole(robot)
             run_simulation(robot)
 
         robot.abs_pos = (robot.abs_pos[0], wanted_y)
@@ -389,8 +394,66 @@ def move_one_tile_gps(robot: MazeRobot):
 
         robot.abs_pos = (wanted_x, robot.abs_pos[1])
         print("Arrived x")
-        update_hole(robot)
+        # update_hole(robot)
         # stop(robot, 150)
+
+
+def move_one_tile_gps2(robot: MazeRobot):
+
+    if robot.current_direction in [1, 2]:
+        sign = 1
+    else:
+        sign = -1
+
+    if robot.current_direction in (0, 2):
+        robot.start_pos[1] = int(robot.robot_pos[1])
+        robot.start_pos[0] = None
+
+        robot.next_tile = (int(robot.robot_pos[0]), int(robot.robot_pos[1]) + 12 * sign)
+
+        while robot.start_pos[1] == int(robot.robot_pos[1]) or int(robot.robot_pos[1]) % 12 != 0:
+
+            if check_walls(robot)["front_mid_tile"]:
+                return False
+
+            if robot.next_tile in robot.holes:
+                move_forward2(robot, -6.221)
+                run_simulation(robot)
+                return False
+
+            if check_camz(robot):
+                x = int(robot.robot_pos[0])
+                y = int(robot.robot_pos[1])
+                robot.detected_signs[(x, y)] = True
+            if robot.can_run_simulation:
+                move_forward2(robot, 6.221)
+            run_simulation(robot)
+
+    else:
+        robot.start_pos[0] = int(robot.robot_pos[0])
+        robot.start_pos[1] = None
+
+        robot.next_tile = (int(robot.robot_pos[0]) + 12 * sign, int(robot.robot_pos[1]))
+
+        while robot.start_pos[0] == int(robot.robot_pos[0]) or int(robot.robot_pos[0]) % 12 != 0:
+
+            if check_walls(robot)["front_mid_tile"]:
+                return False
+
+            if robot.next_tile in robot.holes:
+                move_forward2(robot, -6.221)
+                run_simulation(robot)
+                return False
+
+            if check_camz(robot):
+                x = int(robot.robot_pos[0])
+                y = int(robot.robot_pos[1])
+                robot.detected_signs[(x, y)] = True
+            if robot.can_run_simulation:
+                move_forward2(robot, 6.221)
+            run_simulation(robot)
+
+    print("new gps done at {},  {}".format(*robot.robot_pos))
 
 
 def move_one_tile_gps_with_camera(robot: MazeRobot, img):
@@ -445,8 +508,16 @@ def stop(robot: MazeRobot, t=10):
 
 
 def get_gps(robot: MazeRobot):
-    robot.robot_pos[0] = robot.gps.getValues()[0] * 100
-    robot.robot_pos[1] = robot.gps.getValues()[2] * 100
+    # robot.robot_pos[0] = robot.gps.getValues()[0] * 100
+    # robot.robot_pos[1] = robot.gps.getValues()[2] * 100
+    if not robot.initial_map_pos[0] and not robot.initial_map_pos[1]:
+        robot.initial_map_pos[0] = robot.gps.getValues()[0] * 100
+        robot.initial_map_pos[1] = robot.gps.getValues()[2] * 100
+        robot.robot_pos = [0, 0]
+    else:
+        robot.robot_pos[0] = robot.gps.getValues()[0] * 100 - robot.initial_map_pos[0]
+        robot.robot_pos[1] = robot.gps.getValues()[2] * 100 - robot.initial_map_pos[1]
+
     if robot.abs_pos == [-1, -1]:
         robot.abs_pos = robot.robot_pos.copy()
 
@@ -642,15 +713,16 @@ def viewColour(robot: MazeRobot):
     r, g, b = robot.color_sensor_values
 
     if (r >= 200) and (g >= 200) and (b >= 200):
-        print("White")
+        # print("White")
         robot.color_case = "white"
     elif (r >= 230) and (g >= 200) and (g <= 240) and (b > 110) and (b <= 160):
-        print("Orange")
+        # print("Orange")
         robot.color_case = "orange"
     elif (r < 70) and (g < 70) and (b < 70):
-        print("Black")
+        # print("Black")
         robot.color_case = "black"
-        set_hole_location(robot)
+        # set_hole_location(robot)
+        robot.holes[robot.next_tile] = True
 
     return robot.color_case
 
@@ -720,7 +792,7 @@ def cam(img):
 def check_walls(robot: MazeRobot):
     right_rays_in_range = 3 < robot.lidar_data[2][128 - 20] < 17 and 3 < robot.lidar_data[2][128 + 20] < 17
     left_rays_in_range = 3 < robot.lidar_data[2][384 - 20] < 17 and 3 < robot.lidar_data[2][384 + 20] < 17
-    front_rays_in_range = robot.lidar_data[2][0 - 20] < 17 and robot.lidar_data[2][0 + 20] < 17
+    front_rays_in_range = robot.lidar_data[2][0 - 20] < 17 or robot.lidar_data[2][0 + 20] < 17
     back_rays_in_range = 3 < robot.lidar_data[2][256 - 20] < 17 and 3 < robot.lidar_data[2][256 + 20] < 17
 
     right_difference1 = abs(robot.lidar_data[2][128] - robot.lidar_data[2][128 + 40])
@@ -740,13 +812,21 @@ def check_walls(robot: MazeRobot):
     front = front_rays_in_range
     back = back_rays_in_range
 
+    right_navigate = robot.lidar_data[2][128 - 20] < 17 or robot.lidar_data[2][128 + 20] < 17
+    left_navigate = robot.lidar_data[2][384 - 20] < 17 or robot.lidar_data[2][384 + 20] < 17
+
+    front_mid_tile = robot.lidar_data[2][0 - 20] < 10 or robot.lidar_data[2][0] < 9 or robot.lidar_data[2][0 + 20] < 10
+
     # print("right rays: {}   {}".format(robot.lidar_data[2][128 - 20], robot.lidar_data[2][128 + 20]))
 
     return {
         "front": front,
-        "right": right,
+        "right_move_forward": right,
         "back": back,
-        "left": left
+        "left_move_forward": left,
+        "right_navigate": right_navigate,
+        "left_navigate": left_navigate,
+        "front_mid_tile": front_mid_tile
     }
 
 
@@ -837,17 +917,25 @@ def send_end(robot: MazeRobot):
 
 def check_camz(robot: MazeRobot, _detected=False):
 
+    current_x = int(robot.robot_pos[0])
+    current_y = int(robot.robot_pos[1])
+    not_visited = True
 
+    for x in range(current_x-1, current_x+2):
+        for y in range(current_y-1, current_y+2):
+            if (x, y) in robot.detected_signs:
+                not_visited = False
 
+    print_dict(robot.detected_signs)
     # Detect with right camera
-    if moving_cam(robot.right_image) and check_walls(robot)["right"]:
+    if moving_cam(robot.right_image) and check_walls(robot)["right_move_forward"] and not_visited:
         _detected = True
         victim_type = full_detection(robot.right_image)
         # print("right")
         send_victim(robot, victim_type)
 
     # Detect with left camera
-    if moving_cam(robot.left_image) and check_walls(robot)["left"]:
+    if moving_cam(robot.left_image) and check_walls(robot)["left_move_forward"] and not_visited:
         _detected = True
         victim_type = full_detection(robot.left_image)
         # print("left")
@@ -874,14 +962,16 @@ def navigate(robot: MazeRobot):
     if wall right, forward.... go left
     if hole...simulate it as wall and change dir when turning
     """
-    print("DATA:", robot.hole_direction_pos)
-    print(check_holes(robot))
-    if not check_walls(robot)["right"] and not check_holes(robot)["right"]:
+    # print("DATA:", robot.hole_direction_pos)
+    # print(check_holes(robot))
+    if not check_walls(robot)["right_navigate"]:
         turn_90_time_step(robot, "right")
         # move_one_tile_gps(robot)
-        move_one_tile(robot)
+        move_one_tile_gps2(robot)
+        # move_one_tile(robot)
     else:
-        if not check_walls(robot)["front"] and not check_holes(robot)["front"]:
-            move_one_tile_gps(robot)
+        if not check_walls(robot)["front"]:
+            # move_one_tile_gps(robot)
+            move_one_tile_gps2(robot)
         else:
             turn_90_time_step(robot, "left")
