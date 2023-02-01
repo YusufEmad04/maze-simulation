@@ -16,9 +16,9 @@ def run_simulation(robot: MazeRobot, step=16):
         result = robot.robot.step(step)
         get_all_values(robot)
         print("current dir: {}".format(robot.current_direction))
-        print("robot pos: ", robot.robot_pos)
+        # print("robot pos: ", robot.robot_pos)
         print("next tile: ", robot.next_tile)
-        print_dict(check_walls(robot))
+        # print_dict(check_walls(robot))
         print("-----------------")
         robot.counter += 1
         if result == -1:
@@ -27,7 +27,7 @@ def run_simulation(robot: MazeRobot, step=16):
 
 def add_to_arr(arr, data):
     arr.append(data)
-    if len(arr) >= 4:
+    if len(arr) >= 3:
         arr.pop(0)
 
 
@@ -88,6 +88,9 @@ def move_forward(robot: MazeRobot, v):
 
 
 def move_forward2(robot: MazeRobot, v):
+    if robot.color_case == "swamp":
+        v = 2
+
     walls = check_walls(robot)
     index = None
 
@@ -282,51 +285,15 @@ def turn_left(robot: MazeRobot, v):
     set_right_vel(robot, -v)
 
 
-def turn_90_time_step_with_camera(robot: MazeRobot, direction):
-    x = 18
-    z = 10
-    if robot.color_case == "orange":
-        speed = 5.4464
-    else:
-        speed = 3.4898
-
-    if direction == "right":
-        speed = -speed
-        robot.current_direction = (robot.current_direction + 1) % 4
-    elif direction == "left":
-        robot.current_direction = (robot.current_direction - 1) % 4
-
-    detected = False
-    y = 0
-    while robot.robot.step(32) != -1 and x >= 0:
-        if y > 0:
-            y -= 1
-            stop(robot)
-        else:
-            get_all_values(robot)
-            print("gyro values: ", robot.gyro_values)
-            x -= 1
-            turn_left(robot, speed)
-
-            if not detected:
-                if moving_cam(robot.left_image):
-                    victim_type = full_detection(robot.left_image)
-                    detected = True
-                    print(f"Victim type = {victim_type}")  # send to the receiver
-                    y = 10
-    while robot.robot.step(32) != -1 and z >= 0:
-        z -= 1
-        stop(robot)
-
-
 def turn_90_time_step(robot: MazeRobot, direction="right"):
-    x = 19 * 2 + 2
-    # if robot.color_case == "orange":
-    #     speed = 5.4464
-    # else:
-    #     speed = 3.4868
+    if robot.color_case == "swamp":
+        x = 217
 
-    speed = 3.48985044
+        speed = 2
+    else:
+        x = 19 * 2 + 2
+
+        speed = 3.48985044
 
     if direction == "right":
         robot.current_direction = (robot.current_direction + 1) % 4
@@ -351,14 +318,18 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
     print("rotation finished")
 
 
-def initialize_dir(robot: MazeRobot):
-    start = robot.robot_pos.copy()
-    t = 1
-    while robot.can_run_simulation and t >= 0:
-        move_forward(robot, 6)
-        t -= 1
+def update_dir(robot: MazeRobot):
 
-        run_simulation(robot, 16)
+    if robot.time_step <= 3:
+        start = robot.robot_pos.copy()
+        t = 1
+        while robot.can_run_simulation and t >= 0:
+            move_forward(robot, 6)
+            t -= 1
+
+            run_simulation(robot, 16)
+    else:
+        start = robot.robot_position_list[0]
 
     x_diff = robot.robot_pos[0] - start[0]
     y_diff = robot.robot_pos[1] - start[1]
@@ -425,6 +396,7 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
 
             if robot.can_run_simulation:
                 move_forward2(robot, 6.221)
+                update_dir(robot)
             run_simulation(robot)
 
     else:
@@ -455,6 +427,7 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
             check_camz(robot)
             if robot.can_run_simulation:
                 move_forward2(robot, 6.221)
+                update_dir(robot)
             run_simulation(robot)
 
     print("new gps done at {},  {}".format(*robot.robot_pos))
@@ -637,9 +610,10 @@ def viewColour(robot: MazeRobot):
     if (r >= 200) and (g >= 200) and (b >= 200):
         # print("White")
         robot.color_case = "white"
-    elif (r >= 230) and (g >= 200) and (g <= 240) and (b > 110) and (b <= 160):
+    elif 185 <= r <= 205 and 150 <= g <= 170 and 80 <= b <= 100:
         # print("Orange")
-        robot.color_case = "orange"
+        # TODO Rename swamp to Shorbet 3ads
+        robot.color_case = "swamp"
     elif (r < 70) and (g < 70) and (b < 70):
         # print("Black")
         robot.color_case = "black"

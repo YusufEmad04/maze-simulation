@@ -15,10 +15,12 @@ class RunningRobot(MazeRobot):
         set_left_vel(self, 0)
         set_right_vel(self, 0)
         stop(self, 150)
-        initialize_dir(self)
+        update_dir(self)
         # start_server(self)
         while self.can_run_simulation:
-            navigate(self)
+            # navigate(self)
+            update_dir(self)
+            move_forward2(self, 6)
             # set_left_vel(self, 0)
             # set_right_vel(self, 0)
 
