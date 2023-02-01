@@ -593,7 +593,7 @@
             ]
             }
             Transform {
-            translation 0.0 0.010499999999999999 -0.037
+            translation 0.0 0.014499999999999999 -0.037
             rotation -0.58 0.58 -0.58 2.09
             children [
                 Camera {

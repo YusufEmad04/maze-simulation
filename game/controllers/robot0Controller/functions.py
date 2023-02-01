@@ -49,7 +49,6 @@ def set_right_vel(robot: MazeRobot, v):
 
 
 def move_forward(robot: MazeRobot, v):
-
     walls = check_walls(robot)
     index = None
 
@@ -63,7 +62,7 @@ def move_forward(robot: MazeRobot, v):
         set_right_vel(robot, v)
     else:
         rays = []
-        for i in robot.lidar_data[2][index - 30 : index + 31]:
+        for i in robot.lidar_data[2][index - 30: index + 31]:
             rays.append((i, robot.lidar_data[2].index(i)))
 
         # get min distance
@@ -115,7 +114,7 @@ def move_forward2(robot: MazeRobot, v):
             ray2 = robot.lidar_data[2][index + 20]
 
             rays = []
-            for i in robot.lidar_data[2][index - 30 : index + 31]:
+            for i in robot.lidar_data[2][index - 30: index + 31]:
                 rays.append((i, robot.lidar_data[2].index(i)))
 
             # get min distance
@@ -136,13 +135,12 @@ def move_forward2(robot: MazeRobot, v):
                     set_left_vel(robot, v * 0.5)
                     set_right_vel(robot, v)
 
-
         elif index == 384:
             ray1 = robot.lidar_data[2][index - 20]
             ray2 = robot.lidar_data[2][index + 20]
 
             rays = []
-            for i in robot.lidar_data[2][index - 30 : index + 31]:
+            for i in robot.lidar_data[2][index - 30: index + 31]:
                 rays.append((i, robot.lidar_data[2].index(i)))
 
             # get min distance
@@ -162,6 +160,7 @@ def move_forward2(robot: MazeRobot, v):
                     # set_left_vel(robot, v * (1 - ratio))
                     set_left_vel(robot, v * 0.5)
                     set_right_vel(robot, v)
+
 
 def move_backward2(robot: MazeRobot, v):
     walls = check_walls(robot)
@@ -192,7 +191,7 @@ def move_backward2(robot: MazeRobot, v):
 
             rays = []
 
-            for i in robot.lidar_data[2][index - 30 : index + 31]:
+            for i in robot.lidar_data[2][index - 30: index + 31]:
                 rays.append((i, robot.lidar_data[2].index(i)))
 
             # get min distance
@@ -210,14 +209,13 @@ def move_backward2(robot: MazeRobot, v):
                     set_left_vel(robot, -v * 0.5)
                     set_right_vel(robot, -v)
 
-
         elif index == 384:
             ray1 = robot.lidar_data[2][index - 20]
             ray2 = robot.lidar_data[2][index + 20]
 
             rays = []
 
-            for i in robot.lidar_data[2][index - 30 : index + 31]:
+            for i in robot.lidar_data[2][index - 30: index + 31]:
                 rays.append((i, robot.lidar_data[2].index(i)))
 
             # get min distance
@@ -228,14 +226,15 @@ def move_backward2(robot: MazeRobot, v):
                 set_right_vel(robot, -v * 0.7)
             else:
 
-                    if ray1 > ray2:
-                        set_left_vel(robot, -v * 0.5)
-                        set_right_vel(robot, -v)
-                    else:
-                        set_left_vel(robot, -v)
-                        set_right_vel(robot, -v * 0.5)
-def move_forward3(robot: MazeRobot, v):
+                if ray1 > ray2:
+                    set_left_vel(robot, -v * 0.5)
+                    set_right_vel(robot, -v)
+                else:
+                    set_left_vel(robot, -v)
+                    set_right_vel(robot, -v * 0.5)
 
+
+def move_forward3(robot: MazeRobot, v):
     walls = check_walls(robot)
     index = None
 
@@ -250,7 +249,7 @@ def move_forward3(robot: MazeRobot, v):
 
     else:
         rays = []
-        for i in robot.lidar_data[2][index - 30 : index + 31]:
+        for i in robot.lidar_data[2][index - 30: index + 31]:
             rays.append((i, robot.lidar_data[2].index(i)))
 
         # get min distance
@@ -260,17 +259,18 @@ def move_forward3(robot: MazeRobot, v):
         if index == 128:
             if min_ray[0] > 11.54:
                 set_left_vel(robot, v)
-                set_right_vel(robot, v*0.5)
+                set_right_vel(robot, v * 0.5)
             else:
-                set_left_vel(robot, v*0.5)
+                set_left_vel(robot, v * 0.5)
                 set_right_vel(robot, v)
         else:
             if min_ray[0] > 11.54:
-                set_left_vel(robot, v*0.5)
+                set_left_vel(robot, v * 0.5)
                 set_right_vel(robot, v)
             else:
                 set_left_vel(robot, v)
-                set_right_vel(robot, v*0.5)
+                set_right_vel(robot, v * 0.5)
+
 
 def turn_right(robot: MazeRobot, v):
     set_left_vel(robot, -v)
@@ -348,18 +348,7 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
         if robot.can_run_simulation:
             run_simulation(robot, step=16)
 
-    if direction == "right":
-        update_hole(robot, 1)
-    else:
-        update_hole(robot, 2)
-
     print("rotation finished")
-    # stop(robot, 120)
-
-    # TEMP Add a break after turn
-    # while robot.robot.step(32) != -1 and x >= -5:
-    #     stop(robot)
-    #     x -= 1
 
 
 def initialize_dir(robot: MazeRobot):
@@ -386,91 +375,7 @@ def initialize_dir(robot: MazeRobot):
             robot.current_direction = 0
 
 
-def move_one_tile(robot: MazeRobot):
-    x = 28 * 2 + 2
-    if robot.color_case == "orange":
-        speed = 5.4464
-    else:
-        speed = 3.4898
-
-    detected = False
-
-    for i in range(x):
-
-        if not detected:
-            if check_camz(robot):
-                detected = True
-
-        move_forward2(robot, 6.221)
-
-        if robot.can_run_simulation:
-            run_simulation(robot, step=16)
-        else:
-            return -1
-
-    print("tile finished")
-    update_hole(robot)
-    # stop(robot, 150)
-
-    return True
-
-
-def move_one_tile_gps(robot: MazeRobot):
-    """
-    0: front
-    1: right
-    2: back
-    3: left
-    """
-    # Get wanted position
-    if robot.current_direction in [1, 2]:
-        sign = 1
-    else:
-        sign = -1
-
-    detected = False
-
-    if robot.current_direction in [0, 2]:
-        wanted_y = robot.abs_pos[1] + 12 * sign
-
-        while abs(robot.robot_pos[1] - wanted_y) >= 0.4:
-            # Detect victim once
-            if not detected:
-                if check_camz(robot):
-                    detected = True
-
-            # Move one tile
-            if robot.can_run_simulation:
-                move_forward2(robot, 6.221)
-                # update_hole(robot)
-            run_simulation(robot)
-
-        robot.abs_pos = (robot.abs_pos[0], wanted_y)
-        print("Arrived Y")
-        # stop(robot, 150)
-
-    else:
-        wanted_x = robot.abs_pos[0] + 12 * sign
-
-        while abs(robot.robot_pos[0] - wanted_x) >= 0.4:
-            # Detect victim once
-            if not detected:
-                if check_camz(robot):
-                    detected = True
-
-            # Move one tile
-            if robot.can_run_simulation:
-                move_forward2(robot, 6.221)
-            run_simulation(robot)
-
-        robot.abs_pos = (wanted_x, robot.abs_pos[1])
-        print("Arrived x")
-        # update_hole(robot)
-        # stop(robot, 150)
-
-
-def move_one_tile_gps2(robot: MazeRobot, half=False):
-
+def move_one_tile_gps(robot: MazeRobot, half=False):
     if half:
         length = 6
         for_loop_start = 2
@@ -555,48 +460,6 @@ def move_one_tile_gps2(robot: MazeRobot, half=False):
     print("new gps done at {},  {}".format(*robot.robot_pos))
 
 
-def move_one_tile_gps_with_camera(robot: MazeRobot, img):
-    if robot.current_direction in [0, 1]:
-        sign = -1
-    else:
-        sign = 1
-    if robot.current_direction in [0, 2]:
-        robot.wanted_tile = [robot.robot_pos[0] + sign * 12, robot.robot_pos[1]]
-    else:
-        robot.wanted_tile = [robot.robot_pos[0], robot.robot_pos[1] + sign * 12]
-
-    detected = False
-    while robot.robot.step(32) != -1 and not arrived_at_coord(robot, robot.wanted_tile):
-
-        get_all_values(robot)
-        if moving_cam(robot.left_image):
-            victim_type = full_detection(robot.left_image)
-            print(f"detected {detected}")
-            if victim_type != "N" and detected == False:
-                detected = True
-                print(f"Victim type = {victim_type}")  # send to the receiver
-                stop(robot)
-                # time.sleep(0.7)
-                '''
-                loop for 23 times
-                
-                
-                
-                '''
-        print("Distance away:", get_dist(robot.wanted_tile, robot.robot_pos))
-        move_forward(robot, 3)
-        print("----------")
-
-    stop(robot)
-    time.sleep(2)
-
-    print("_____WP_______\n\n\n_________WP________")
-    for i in range(50):
-        stop(robot)
-    print("_________Hoi__________")
-    return True
-
-
 def stop(robot: MazeRobot, t=10):
     set_left_vel(robot, 0)
     set_right_vel(robot, 0)
@@ -674,46 +537,6 @@ def get_lidar(robot: MazeRobot):
     # lidar_group_values(robot)
     for point in range(512):
         robot.lidar_data[2][point] = robot.lidar_data[2][point] * 2.54 * math.cos(0.0333333333333)
-
-
-def lidar_group_values(robot: MazeRobot):
-    # Divide lidar into 12 groups (30 degrees each group) and take average value
-    # Add values in a group to temp arr, get standard deviation, remnove outliers and calc mean
-    for group in range(12):
-        temp_arr = []
-        # If front, get field of view (30 degree) in the front
-        if group == 0:
-            temp_arr.extend(robot.lidar_data[2][-20:])
-            temp_arr.extend(robot.lidar_data[2][:19])
-        else:
-            start_index = (group * 43) - 19
-            temp_arr.extend(robot.lidar_data[2][start_index: start_index + 43])
-
-        # eliminate outliers and get mean
-        mean = statistics.mean(temp_arr)
-        stdev = statistics.stdev(temp_arr)
-
-        final_arr = [x for x in temp_arr if (mean + 2 * stdev > x > mean - 2 * stdev)]
-        # print("\nFinal ARRAY IS:\n", final_arr)
-        robot.lidar_groups[group] = statistics.mean(final_arr)
-
-    print("Groups:", robot.lidar_groups)
-
-
-def get_wall(robot: MazeRobot):
-    min_val = 4
-    max_val = 8
-    arr = [0, 0, 0, 0]
-    print((robot.lidar_groups[8] + robot.lidar_groups[9]) / 2)
-    if min_val <= robot.lidar_groups[0] <= max_val:
-        arr[0] = 1
-    if min_val <= (robot.lidar_groups[2] + robot.lidar_groups[3]) / 2 <= max_val:
-        arr[1] = 1
-    if min_val <= robot.lidar_groups[5] <= max_val:
-        arr[2] = 1
-    if min_val <= (robot.lidar_groups[8] + robot.lidar_groups[9]) / 2 <= max_val:
-        arr[3] = 1
-    robot.lidar_wall = arr
 
 
 def create_tile(robot: MazeRobot):
@@ -827,30 +650,6 @@ def viewColour(robot: MazeRobot):
     return robot.color_case
 
 
-def set_hole_location(robot: MazeRobot):
-    print("CHANGED\n____________")
-    robot.hole_direction_pos[0] = 0
-
-    if robot.current_direction == 0:
-        hole_pos = [robot.robot_pos[0], robot.robot_pos[1] - 12]
-    elif robot.current_direction == 1:
-        hole_pos = [robot.robot_pos[0] + 12, robot.robot_pos[1]]
-    elif robot.current_direction == 2:
-        hole_pos = [robot.robot_pos[0], robot.robot_pos[1] + 12]
-    else:
-        hole_pos = [robot.robot_pos[0] - 12, robot.robot_pos[1]]
-
-    # if get_dist(hole_pos, robot.hole_direction_pos[1]) >= 0.5:
-    robot.hole_direction_pos[1] = hole_pos
-    avoid_hole(robot)
-
-
-
-# TODO Sequence to break move_one_tile when hole found
-def avoid_hole(robot: MazeRobot):
-    pass
-
-
 def cam(img):
     rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
     rgb_copy = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
@@ -892,8 +691,10 @@ def cam(img):
 def check_walls(robot: MazeRobot):
     right_rays_in_range = 3 < robot.lidar_data[2][128 - 20] < 17 and 3 < robot.lidar_data[2][128 + 20] < 17
     left_rays_in_range = 3 < robot.lidar_data[2][384 - 20] < 17 and 3 < robot.lidar_data[2][384 + 20] < 17
-    front_rays_in_range = robot.lidar_data[2][0 - 20] < 17 or robot.lidar_data[2][0 + 20] < 17 or robot.lidar_data[2][0] < 17
-    back_rays_in_range = robot.lidar_data[2][256 - 20] < 17 and robot.lidar_data[2][256 + 20] < 17 or robot.lidar_data[2][256] < 17
+    front_rays_in_range = robot.lidar_data[2][0 - 20] < 17 or robot.lidar_data[2][0 + 20] < 17 or robot.lidar_data[2][
+        0] < 17
+    back_rays_in_range = robot.lidar_data[2][256 - 20] < 17 and robot.lidar_data[2][256 + 20] < 17 or \
+                         robot.lidar_data[2][256] < 17
 
     right_difference1 = abs(robot.lidar_data[2][128] - robot.lidar_data[2][128 + 40])
     right_difference2 = abs(robot.lidar_data[2][128] - robot.lidar_data[2][128 - 40])
@@ -906,8 +707,10 @@ def check_walls(robot: MazeRobot):
     front = front_rays_in_range
     back = back_rays_in_range
 
-    right_navigate = robot.lidar_data[2][128 - 20] < 17 or robot.lidar_data[2][128 + 20] < 17 or robot.lidar_data[2][128] < 17
-    left_navigate = robot.lidar_data[2][384 - 20] < 17 or robot.lidar_data[2][384 + 20] < 17 or robot.lidar_data[2][384] < 17
+    right_navigate = robot.lidar_data[2][128 - 20] < 17 or robot.lidar_data[2][128 + 20] < 17 or robot.lidar_data[2][
+        128] < 17
+    left_navigate = robot.lidar_data[2][384 - 20] < 17 or robot.lidar_data[2][384 + 20] < 17 or robot.lidar_data[2][
+        384] < 17
 
     front_mid_tile = robot.lidar_data[2][0 - 20] < 10 or robot.lidar_data[2][0] < 9 or robot.lidar_data[2][0 + 20] < 10
 
@@ -924,45 +727,9 @@ def check_walls(robot: MazeRobot):
     }
 
 
-def check_holes(robot: MazeRobot):
-    front = robot.hole_direction_pos[0] == 0
-    right = robot.hole_direction_pos[0] == 1
-    back = robot.hole_direction_pos[0] == 2
-    left = robot.hole_direction_pos[0] == 3
-
-    return {
-        "front": front,
-        "right": right,
-        "back": back,
-        "left": left
-    }
-
-
 def print_dict(d):
     for k, v in d.items():
         print(k, v)
-
-
-def print_lidar_triples(robot: MazeRobot):
-    front_ray = (robot.lidar_data[2][0], 0)
-    right_ray = (robot.lidar_data[2][128], 128)
-    back_ray = (robot.lidar_data[2][256], 256)
-    left_ray = (robot.lidar_data[2][384], 384)
-
-    print("front {}   {}   {}, range: {}".format(*get_ray_triple(robot, front_ray)))
-    print("right {}   {}   {}, range: {}".format(*get_ray_triple(robot, right_ray)))
-    print("back  {}   {}   {}, range: {}".format(*get_ray_triple(robot, back_ray)))
-    print("left  {}   {}   {}, range: {}".format(*get_ray_triple(robot, left_ray)))
-    print("-------------------------")
-
-
-def get_ray_triple(robot: MazeRobot, ray):
-    if 9 <= ray[0] <= 15:
-        range = 50
-    else:
-        range = 20
-
-    return robot.lidar_data[2][ray[1] - range], robot.lidar_data[2][ray[1]], robot.lidar_data[2][ray[1] + range], range
 
 
 def send_victim(robot: MazeRobot, vt):
@@ -970,7 +737,6 @@ def send_victim(robot: MazeRobot, vt):
     x = int(robot.gps.getValues()[0] * 100)
     y = int(robot.gps.getValues()[2] * 100)
     # TODO Remove prints
-    # print("X: {}, Y: {}".format(x, y))
     print("vt: {}".format(victim_type))
     message = struct.pack("i i c", x, y, victim_type)
     stop(robot, 100)
@@ -978,49 +744,19 @@ def send_victim(robot: MazeRobot, vt):
     stop(robot, 64)
 
 
-def turn_90_with_lidar(robot: MazeRobot, direction):
-    if direction == "right":
-        speed = -5
-    else:
-        speed = 5
-
-    for i in range(17):
-        set_left_vel(robot, 6)
-        set_right_vel(robot, -6)
-        run_simulation(robot, 16)
-
-
-    rays = []
-    for i in robot.lidar_data[2]:
-        rays.append(i)
-
-
-    pass
-
-
-def are_equal(a, b):
-    for i in range(len(a)):
-        if abs(a[i] - b[i]) > 0.5:
-            return False
-    return True
-
-
 def send_end(robot: MazeRobot):
     robot.emitter.send(bytes('E', "utf-8"))
 
 
 def check_camz(robot: MazeRobot, _detected=False):
-
     current_x = int(robot.robot_pos[0])
     current_y = int(robot.robot_pos[1])
     not_visited = True
 
-    for x in range(current_x-1, current_x+2):
-        for y in range(current_y-1, current_y+2):
-            if (x, y) in robot.detected_signs:
-                not_visited = False
+    for i in robot.detected_signs:
+        if get_dist(i, (current_x, current_y)) <= math.sqrt(2):
+            not_visited = False
 
-    # print_dict(robot.detected_signs)
     # Detect with right camera
     if moving_cam(robot.right_image) and check_walls(robot)["right_move_forward"] and not_visited:
         _detected = True
@@ -1045,17 +781,7 @@ def check_camz(robot: MazeRobot, _detected=False):
 
     return _detected
 
-def update_hole(robot: MazeRobot, dir=0):
-    # dir = ["front", "right", " left"]
-    if get_dist(robot.robot_pos, robot.hole_direction_pos[1]) >= 18:
-        robot.hole_direction_pos[0] = -1
-    elif robot.hole_direction_pos[0] != -1:
-        if dir == 0:
-            pass
-        if dir == 1:
-            robot.hole_direction_pos[0] = (robot.hole_direction_pos[0] - 1) % 4
-        else:
-            robot.hole_direction_pos[0] = (robot.hole_direction_pos[0] + 1) % 4
+
 def navigate(robot: MazeRobot):
     """
 
@@ -1064,28 +790,29 @@ def navigate(robot: MazeRobot):
     if wall right, forward.... go left
     if hole...simulate it as wall and change dir when turning
     """
-    # print("DATA:", robot.hole_direction_pos)
-    # print(check_holes(robot))
+
     if not check_walls(robot)["right_navigate"]:
         turn_90_time_step(robot, "right")
-        # move_one_tile_gps(robot)
+
+        # Determine if move tile or half tile
         front_ray = robot.lidar_data[2][0] < 35
         front_left_ray = robot.lidar_data[2][-20] < 35
         front_right_ray = robot.lidar_data[2][20] < 35
+
         if front_ray or front_left_ray or front_right_ray:
-            move_one_tile_gps2(robot, half=True)
+            move_one_tile_gps(robot, half=True)
         else:
-            move_one_tile_gps2(robot)
-        # move_one_tile(robot)
+            move_one_tile_gps(robot)
     else:
         if not check_walls(robot)["front"]:
-            # move_one_tile_gps(robot)
+
             front_ray = robot.lidar_data[2][0] < 35
             front_left_ray = robot.lidar_data[2][-20] < 35
             front_right_ray = robot.lidar_data[2][20] < 35
+
             if front_ray or front_left_ray or front_right_ray:
-                move_one_tile_gps2(robot, half=True)
+                move_one_tile_gps(robot, half=True)
             else:
-                move_one_tile_gps2(robot)
+                move_one_tile_gps(robot)
         else:
             turn_90_time_step(robot, "left")
