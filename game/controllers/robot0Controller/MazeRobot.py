@@ -61,7 +61,7 @@ class MazeRobot:
         self.time_steps_arr = []
 
         self.tile_pos = []
-        self.abs_pos = [-1, -1]                 # Position where robot supposed to be
+        self.current_tile = []                # Tile where robot supposed to be
         self.current_tile = [-1, -1]
         self.wanted_tile = [-1, -1]
 
@@ -93,4 +93,3 @@ class MazeRobot:
         self.holes = dict()
 
         self.next_tile = []
-
