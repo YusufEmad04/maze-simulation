@@ -328,6 +328,8 @@ def update_dir(robot: MazeRobot):
             t -= 1
 
             run_simulation(robot, 16)
+        set_right_vel(robot, 0)
+        set_left_vel(robot, 0)
     else:
         start = robot.robot_position_list[0]
 
@@ -453,9 +455,6 @@ def get_gps(robot: MazeRobot):
         robot.robot_pos[0] = robot.gps.getValues()[0] * 100 - robot.initial_map_pos[0]
         robot.robot_pos[1] = robot.gps.getValues()[2] * 100 - robot.initial_map_pos[1]
 
-    if robot.abs_pos == [-1, -1]:
-        robot.abs_pos = robot.robot_pos.copy()
-
 
 def get_dist(pos1, pos2):
     y = (pos2[1] - pos1[1]) ** 2
@@ -555,7 +554,7 @@ def get_all_values(robot: MazeRobot):
     get_cameras_values(robot)
     get_gyro_values(robot)
     get_lidar(robot)
-    viewColour(robot)
+    view_colour(robot)
 
 
 def map_updater(robot: MazeRobot, x, z):
@@ -603,7 +602,7 @@ def map_updater(robot: MazeRobot, x, z):
 
 
 # # Avoid holes and swamps by looking at the RBG colour of the camera
-def viewColour(robot: MazeRobot):
+def view_colour(robot: MazeRobot):
     color_case = ""
     r, g, b = robot.color_sensor_values
 
@@ -617,7 +616,6 @@ def viewColour(robot: MazeRobot):
     elif (r < 70) and (g < 70) and (b < 70):
         # print("Black")
         robot.color_case = "black"
-        # set_hole_location(robot)
         if robot.next_tile:
             robot.holes[robot.next_tile] = True
 
@@ -756,6 +754,49 @@ def check_camz(robot: MazeRobot, _detected=False):
     return _detected
 
 
+def check_half(robot: MazeRobot):
+    # Determine if move tile or half tile
+    front_ray = robot.lidar_data[2][0] < 35
+    front_left_ray = robot.lidar_data[2][-20] < 35
+    front_right_ray = robot.lidar_data[2][20] < 35
+
+    if front_ray or front_left_ray or front_right_ray:
+        return True
+    return False
+
+
+def get_current_tile(robot: MazeRobot):
+    current_x = 12 * ((robot.robot_pos[0] + 6) // 12)
+    current_y = 12 * ((robot.robot_pos[1] + 6) // 12)
+    return [current_x, current_y]
+
+
+def check_neighbouring_tile(robot: MazeRobot):
+    current_tile = get_current_tile(robot)
+
+    tiles = [
+        [current_tile[0], current_tile[1] - 12],
+        [current_tile[0] + 12, current_tile[1]],
+        [current_tile[0], current_tile[1] + 12],
+        [current_tile[0] - 12, current_tile[1]],
+    ]
+
+    flags = [False, False, False, False]
+    for i in range(4):
+        for tile in robot.holes:
+            if get_dist(tile, tiles[i]) <= 5:
+                flags[i] = True
+
+    flags = flags[-robot.current_direction:] + flags[:-robot.current_direction]
+
+    return {
+        "front": flags[0],
+        "right": flags[1],
+        "back": flags[2],
+        "left": flags[3]
+    }
+
+
 def navigate(robot: MazeRobot):
     """
 
@@ -767,26 +808,9 @@ def navigate(robot: MazeRobot):
 
     if not check_walls(robot)["right_navigate"]:
         turn_90_time_step(robot, "right")
-
-        # Determine if move tile or half tile
-        front_ray = robot.lidar_data[2][0] < 35
-        front_left_ray = robot.lidar_data[2][-20] < 35
-        front_right_ray = robot.lidar_data[2][20] < 35
-
-        if front_ray or front_left_ray or front_right_ray:
-            move_one_tile_gps(robot, half=True)
-        else:
-            move_one_tile_gps(robot)
+        move_one_tile_gps(robot, check_half(robot))
     else:
         if not check_walls(robot)["front"]:
-
-            front_ray = robot.lidar_data[2][0] < 35
-            front_left_ray = robot.lidar_data[2][-20] < 35
-            front_right_ray = robot.lidar_data[2][20] < 35
-
-            if front_ray or front_left_ray or front_right_ray:
-                move_one_tile_gps(robot, half=True)
-            else:
-                move_one_tile_gps(robot)
+            move_one_tile_gps(robot, check_half(robot))
         else:
             turn_90_time_step(robot, "left")
