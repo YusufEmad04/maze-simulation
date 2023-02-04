@@ -16,10 +16,13 @@ def run_simulation(robot: MazeRobot, step=16):
         result = robot.robot.step(step)
         get_all_values(robot)
         print("current dir: {}".format(robot.current_direction))
-        # print("robot pos: ", robot.robot_pos)
-        print("next tile: ", robot.next_tile)
+        print("robot pos: ", robot.robot_pos)
+        #print("next tile: ", robot.next_tile)
         # print_dict(check_walls(robot))
+        print_dict(check_neighbouring_tile(robot))
+        print_dict(robot.holes)
         print("-----------------")
+
         robot.counter += 1
         if result == -1:
             robot.can_run_simulation = False
@@ -287,7 +290,9 @@ def turn_left(robot: MazeRobot, v):
 
 def turn_90_time_step(robot: MazeRobot, direction="right"):
     if robot.color_case == "swamp":
-        x = 217
+        # TODO Make sure to submit correct x
+        # x = 217
+        x = 70
 
         speed = 2
     else:
@@ -387,11 +392,6 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
                 return False
 
             if robot.next_tile in robot.holes:
-                while True:
-                    set_left_vel(robot, 0)
-                    set_right_vel(robot, 0)
-                    print("hole \n hole \n hole \n hole")
-                    run_simulation(robot)
                 return False
 
             check_camz(robot)
@@ -419,11 +419,6 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
                 return False
 
             if robot.next_tile in robot.holes:
-                while True:
-                    set_left_vel(robot, 0)
-                    set_right_vel(robot, 0)
-                    print("hole \n hole \n hole \n hole")
-                    run_simulation(robot)
                 return False
 
             check_camz(robot)
@@ -601,6 +596,36 @@ def map_updater(robot: MazeRobot, x, z):
                 print(i)
 
 
+def move_back_hole(robot: MazeRobot):
+
+    start_x = int(robot.robot_pos[0])
+    start_y = int(robot.robot_pos[1])
+
+    print("BACKING")
+
+    if robot.current_direction in (0, 2):
+        robot.start_pos[1] = start_y
+        robot.start_pos[0] = None
+
+        while int(robot.robot_pos[1]) % 12 != 0:
+
+            if robot.can_run_simulation:
+                move_backward2(robot, 6.221)
+            run_simulation(robot)
+        stop(robot, 100)
+
+    else:
+        robot.start_pos[0] = start_x
+        robot.start_pos[1] = None
+
+        while int(robot.robot_pos[0]) % 12 != 0:
+
+            if robot.can_run_simulation:
+                move_backward2(robot, 6.221)
+            run_simulation(robot)
+        stop(robot, 100)
+
+
 # # Avoid holes and swamps by looking at the RBG colour of the camera
 def view_colour(robot: MazeRobot):
     color_case = ""
@@ -617,7 +642,15 @@ def view_colour(robot: MazeRobot):
         # print("Black")
         robot.color_case = "black"
         if robot.next_tile:
-            robot.holes[robot.next_tile] = True
+            add_hole = True
+            for hole in robot.holes:
+                if get_dist(hole, robot.next_tile) < 6:
+                    add_hole = False
+                    break
+
+            if add_hole:
+                robot.holes[robot.next_tile] = True
+            move_back_hole(robot)
 
     return robot.color_case
 
@@ -791,9 +824,9 @@ def check_neighbouring_tile(robot: MazeRobot):
 
     return {
         "front": flags[0],
-        "right": flags[1],
+        "left": flags[1],
         "back": flags[2],
-        "left": flags[3]
+        "right": flags[3]
     }
 
 
@@ -806,11 +839,26 @@ def navigate(robot: MazeRobot):
     if hole...simulate it as wall and change dir when turning
     """
 
-    if not check_walls(robot)["right_navigate"]:
+    if not (check_walls(robot)["right_navigate"]) and not check_neighbouring_tile(robot)["right"]:
+        print("cat right")
         turn_90_time_step(robot, "right")
+        stop(robot,50)
+
         move_one_tile_gps(robot, check_half(robot))
+        stop(robot,50)
+
     else:
-        if not check_walls(robot)["front"]:
+        if not check_walls(robot)["front"] and not check_neighbouring_tile(robot)["front"]:
+            print("cat front")
+
             move_one_tile_gps(robot, check_half(robot))
+            stop(robot, 50)
+
+
         else:
+            print("cat left")
+
             turn_90_time_step(robot, "left")
+            stop(robot, 50)
+
+
