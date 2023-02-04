@@ -93,3 +93,7 @@ class MazeRobot:
         self.holes = dict()
 
         self.next_tile = []
+
+        self.rounded_pos = None
+
+        self.visited_tiles = dict()

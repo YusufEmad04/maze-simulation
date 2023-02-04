@@ -16,9 +16,10 @@ def run_simulation(robot: MazeRobot, step=16):
         result = robot.robot.step(step)
         get_all_values(robot)
         print("current dir: {}".format(robot.current_direction))
-        print("robot pos: ", robot.robot_pos)
+        print("rounded pos: ", robot.rounded_pos)
         #print("next tile: ", robot.next_tile)
         # print_dict(check_walls(robot))
+        # print_dict(robot.visited_tiles)
         print_dict(check_neighbouring_tile(robot))
         print_dict(robot.holes)
         print("-----------------")
@@ -450,6 +451,13 @@ def get_gps(robot: MazeRobot):
         robot.robot_pos[0] = robot.gps.getValues()[0] * 100 - robot.initial_map_pos[0]
         robot.robot_pos[1] = robot.gps.getValues()[2] * 100 - robot.initial_map_pos[1]
 
+    robot.rounded_pos = (
+        round_to_12(robot.robot_pos[0]),
+        round_to_12(robot.robot_pos[1])
+    )
+
+    if robot.rounded_pos not in robot.visited_tiles:
+        robot.visited_tiles[robot.rounded_pos] = True
 
 def get_dist(pos1, pos2):
     y = (pos2[1] - pos1[1]) ** 2
@@ -808,26 +816,51 @@ def check_neighbouring_tile(robot: MazeRobot):
     current_tile = get_current_tile(robot)
 
     tiles = [
-        [current_tile[0], current_tile[1] - 12],
-        [current_tile[0] + 12, current_tile[1]],
-        [current_tile[0], current_tile[1] + 12],
-        [current_tile[0] - 12, current_tile[1]],
+        ((current_tile[0], current_tile[1] - 12), "front"),
+        ((current_tile[0] + 12, current_tile[1]), "right"),
+        ((current_tile[0], current_tile[1] + 12), "back"),
+        ((current_tile[0] - 12, current_tile[1]), "left"),
     ]
 
-    flags = [False, False, False, False]
-    for i in range(4):
-        for tile in robot.holes:
-            if get_dist(tile, tiles[i]) <= 5:
-                flags[i] = True
-
-    flags = flags[-robot.current_direction:] + flags[:-robot.current_direction]
-
-    return {
-        "front": flags[0],
-        "left": flags[1],
-        "back": flags[2],
-        "right": flags[3]
+    neighbours_dict = {
+        "front": True,
+        "right": True,
+        "back": True,
+        "left": True
     }
+
+    # for tile in tiles:
+    #     for hole in robot.holes:
+    #         if get_dist(tile[0], hole) <= 3:
+    #             neighbours_dict[tile[1]] = False
+
+    for tile in tiles:
+        neighbours_dict[tile[1]] = not value_in_dict(robot.holes, tile[0])
+
+    if robot.current_direction == 0:
+        return neighbours_dict
+    if robot.current_direction == 1:
+        return {
+            "front": neighbours_dict["right"],
+            "right": neighbours_dict["back"],
+            "back": neighbours_dict["left"],
+            "left": neighbours_dict["front"]
+        }
+    elif robot.current_direction == 2:
+        return {
+            "front": neighbours_dict["back"],
+            "right": neighbours_dict["left"],
+            "back": neighbours_dict["front"],
+            "left": neighbours_dict["right"]
+        }
+    elif robot.current_direction == 3:
+        return {
+            "front": neighbours_dict["left"],
+            "right": neighbours_dict["front"],
+            "back": neighbours_dict["right"],
+            "left": neighbours_dict["back"]
+        }
+
 
 
 def navigate(robot: MazeRobot):
@@ -839,26 +872,36 @@ def navigate(robot: MazeRobot):
     if hole...simulate it as wall and change dir when turning
     """
 
-    if not (check_walls(robot)["right_navigate"]) and not check_neighbouring_tile(robot)["right"]:
+    if not (check_walls(robot)["right_navigate"]) and check_neighbouring_tile(robot)["right"]:
         print("cat right")
         turn_90_time_step(robot, "right")
-        stop(robot,50)
+        stop(robot,10)
 
         move_one_tile_gps(robot, check_half(robot))
-        stop(robot,50)
+        stop(robot,10)
 
     else:
-        if not check_walls(robot)["front"] and not check_neighbouring_tile(robot)["front"]:
+        if not check_walls(robot)["front"] and check_neighbouring_tile(robot)["front"]:
             print("cat front")
 
             move_one_tile_gps(robot, check_half(robot))
-            stop(robot, 50)
+            stop(robot, 10)
 
 
         else:
             print("cat left")
 
             turn_90_time_step(robot, "left")
-            stop(robot, 50)
+            stop(robot, 10)
 
 
+def round_to_12(x):
+    return 12 * ((x + 6) // 12)
+
+def value_in_dict(d, value):
+    found = False
+    for i in d:
+        if get_dist(i, value) <= 3:
+            found = True
+
+    return found
