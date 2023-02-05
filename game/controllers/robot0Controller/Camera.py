@@ -253,5 +253,3 @@ def full_detection(img):
         return letter_type
     sign_type = hazard_sign_detection(sign)
     return sign_type
-
-    cv2.waitKey(1)
