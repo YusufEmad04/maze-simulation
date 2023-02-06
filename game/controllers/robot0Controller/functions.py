@@ -6,7 +6,6 @@ from MazeRobot import MazeRobot
 from Camera import moving_cam
 from Camera import full_detection
 import struct
-from turtle import position  # TODO DELETE IT
 
 max_speed = 6.28
 
@@ -18,7 +17,7 @@ def run_simulation(robot: MazeRobot, step=16):
         # print("current dir: {}".format(robot.current_direction))
         # print("rounded pos: ", robot.rounded_pos)
         # #print("next tile: ", robot.next_tile)
-        # # print_dict(check_walls(robot))
+        # print_dict(check_walls(robot))
         # print_dict(robot.visited_tiles)
         # print_dict(check_neighbouring_tile(robot))
         # print_dict(robot.holes)
@@ -26,7 +25,9 @@ def run_simulation(robot: MazeRobot, step=16):
         print("robot pos: ", robot.robot_pos)
         print("get current half tile: ", robot.abs_half_tile)
         print("quarter tiles: ", robot.quarter_tiles)
-        print_dict(robot.visited_quarters)
+        print("holes :", robot.holes)
+        # print("quarter neighbours: ", check_neighbouring_quarter_tile(robot))
+        # print_dict(robot.visited_quarters)
         print("-----------------")
 
         robot.counter += 1
@@ -297,8 +298,8 @@ def turn_left(robot: MazeRobot, v):
 def turn_90_time_step(robot: MazeRobot, direction="right"):
     if robot.color_case == "swamp":
         # TODO Make sure to submit correct x
-        x = 217
-        # x = 70
+        # x = 217
+        x = 70
 
         speed = 2
     else:
@@ -464,11 +465,17 @@ def get_gps(robot: MazeRobot):
         robot.visited_tiles[robot.rounded_pos] = 0
 
     get_current_tile2(robot)
-    quarter_tiles = get_quarter_tiles_around(robot)
+    quarter_tiles = get_quarter_tiles_around(robot, robot.abs_half_tile)
 
-    for q_t in quarter_tiles:
-        if q_t not in robot.visited_quarters:
-            robot.visited_quarters[q_t] = True
+    # for q_t in quarter_tiles:
+    #     if q_t not in robot.visited_quarters:
+    #         robot.visited_quarters[q_t[0]] = True
+
+    for key in quarter_tiles:
+        tile = quarter_tiles[key]
+        if tile not in robot.visited_quarters:
+            robot.visited_quarters[tile] = True
+
 
 def get_dist(pos1, pos2):
     y = (pos2[1] - pos1[1]) ** 2
@@ -660,18 +667,40 @@ def view_colour(robot: MazeRobot):
     elif (r < 70) and (g < 70) and (b < 70):
         # print("Black")
         robot.color_case = "black"
-        if robot.next_tile:
-            add_hole = True
-            for hole in robot.holes:
-                if get_dist(hole, robot.next_tile) < 6:
-                    add_hole = False
-                    break
-
-            if add_hole:
-                robot.holes[robot.next_tile] = True
-            move_back_hole(robot)
+        add_hole(robot)
+        # if robot.next_tile:
+        #     add_hole = True
+        #     for hole in robot.holes:
+        #         if get_dist(hole, robot.next_tile) < 6:
+        #             add_hole = False
+        #             break
+        #
+        #     if add_hole:
+        #         robot.holes[robot.next_tile] = True
+        #     move_back_hole(robot)
 
     return robot.color_case
+
+
+def add_hole(robot: MazeRobot):
+    if robot.current_direction in (1, 2):
+        sign = 1
+    else:
+        sign = -1
+
+    if robot.current_direction in (0, 2):
+        hole_tile = (robot.abs_half_tile[0], robot.abs_half_tile[1] + sign * 12)
+    else:
+        hole_tile = (robot.abs_half_tile[0] + sign * 12, robot.abs_half_tile[1])
+
+    hole_quarters = get_quarter_tiles_around(robot, hole_tile)
+
+    for key in hole_quarters:
+        tile = hole_quarters[key]
+        if tile not in robot.holes:
+            robot.holes[tile] = True
+
+    move_back_hole(robot)
 
 
 def cam(img):
@@ -824,6 +853,7 @@ def get_current_tile(robot: MazeRobot):
     current_y = 12 * ((robot.robot_pos[1] + 6) // 12)
     return [current_x, current_y]
 
+
 def get_current_tile2(robot: MazeRobot):
     if close_to_12(robot.robot_pos[0]):
         current_x = round_to_12(robot.robot_pos[0])
@@ -839,19 +869,20 @@ def get_current_tile2(robot: MazeRobot):
 
     return [current_x, current_y]
 
-def get_quarter_tiles_around(robot: MazeRobot):
-    _x = (-3, 3)
-    _y = (-3, 3)
 
-    quarter_tiles = []
+def get_quarter_tiles_around(robot: MazeRobot, robot_pos):
 
-    for x in _x:
-        for y in _y:
-            quarter_tiles.append((robot.abs_half_tile[0] + x, robot.abs_half_tile[1] + y))
+    quarter_tiles_dict = {
+        "top_left": (robot_pos[0] - 3, robot_pos[1] - 3),
+        "bottom_left": (robot_pos[0] - 3, robot_pos[1] + 3),
+        "top_right": (robot_pos[0] + 3, robot_pos[1] - 3),
+        "bottom_right": (robot_pos[0] + 3, robot_pos[1] + 3)
+    }
 
-    robot.quarter_tiles = quarter_tiles
+    robot.quarter_tiles = quarter_tiles_dict
 
-    return quarter_tiles
+    return quarter_tiles_dict
+
 
 def check_neighbour_holes(robot: MazeRobot):
     current_tile = get_current_tile(robot)
@@ -901,6 +932,7 @@ def check_neighbour_holes(robot: MazeRobot):
             "back": neighbours_dict["right"],
             "left": neighbours_dict["back"]
         }
+
 
 def check_neighbouring_tile(robot: MazeRobot):
     current_tile = get_current_tile(robot)
@@ -952,6 +984,56 @@ def check_neighbouring_tile(robot: MazeRobot):
         }
 
 
+def check_neighbouring_quarter_tile(robot: MazeRobot):
+    top_left = robot.quarter_tiles["top_left"]
+    bottom_left = robot.quarter_tiles["bottom_left"]
+    top_right = robot.quarter_tiles["top_right"]
+    bottom_right = robot.quarter_tiles["bottom_right"]
+
+    neighbours = {
+        "front": (
+            (top_left[0], top_left[1] - 3),
+            (top_right[0], top_right[1] - 3)
+        ),
+        "back": (
+            (bottom_left[0], bottom_left[1] + 3),
+            (bottom_right[0], bottom_right[1] + 3)
+        ),
+        "left": (
+            (top_left[0] - 3, top_left[1]),
+            (bottom_left[0] - 3, bottom_left[1])
+        ),
+        "right": (
+            (top_right[0] + 3, top_right[1]),
+            (bottom_right[0] + 3, bottom_right[1])
+        )
+        }
+
+    if robot.current_direction == 0:
+        return neighbours
+    if robot.current_direction == 1:
+        return {
+            "front": neighbours["right"],
+            "back": neighbours["left"],
+            "left": neighbours["front"],
+            "right": neighbours["back"]
+        }
+    elif robot.current_direction == 2:
+        return {
+            "front": neighbours["back"],
+            "back": neighbours["front"],
+            "left": neighbours["right"],
+            "right": neighbours["left"]
+        }
+    elif robot.current_direction == 3:
+        return {
+            "front": neighbours["left"],
+            "back": neighbours["right"],
+            "left": neighbours["back"],
+            "right": neighbours["front"]
+        }
+
+
 def right_left_back_walls(robot: MazeRobot):
 
     right = check_walls(robot)["right_navigate"] or not check_neighbouring_tile(robot)["right"] or check_neighbour_holes(robot)["right"]
@@ -963,8 +1045,8 @@ def right_left_back_walls(robot: MazeRobot):
     print("back", back)
     print("-----------------")
 
-
     return right and left and back
+
 
 def navigate(robot: MazeRobot):
     """
@@ -996,24 +1078,24 @@ def navigate(robot: MazeRobot):
             move_one_tile_gps(robot, check_half(robot))
             # stop(robot, 10)
 
-
         else:
             print("elseeeeeeeeeeeeeee")
             turn_90_time_step(robot, "left")
 
 
-
-
 def round_to_12(x):
     return 12 * ((x + 6) // 12)
 
+
 def round_to_6(x):
     return 6 * ((x + 3) // 6)
+
 
 def close_to_12(x):
     if x % 12 <= 2 or x % 12 >= 10:
         return True
     return False
+
 
 def value_in_dict(d, value):
     found = False

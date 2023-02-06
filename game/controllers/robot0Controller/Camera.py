@@ -43,7 +43,6 @@ def sign_detection(img):
                 # draw bounding box
                 cv2.rectangle(img_copy, (x, y), (x + w, y + h), (36, 255, 12), 2)
                 # save the image
-                cv2.imwrite("images/sign{}.png".format(counter), img_copy)
                 # crop the image to be contour co-ordinates
                 sign = thresh[y:y + h, x:x + w]  # crop thresh img
                 sign_colored = img[y:y + h, x:x + w]  # crop blurred original img
@@ -84,7 +83,7 @@ def detect_hazards(sign_colored):
     # check if the orange color exists in the img
     pixels = cv2.countNonZero(orange_mask)
     # print(f"orange pixels= {pixels}")
-
+    # TODO Organic Peroxide sign
     if pixels > 10:
         # print("Organic Peroxide _ orange")
         sign_type = "O"
@@ -120,7 +119,6 @@ def letter_detection(sign):
     letter = cv2.bitwise_not(sign)
     # cv2.imshow("letter" , letter)
     # save letter
-    cv2.imwrite("images/letter{}.png".format(counter), letter)
 
     # filling the background of the img with black
     h, w = letter.shape
@@ -194,7 +192,7 @@ def hazard_sign_detection(sign):
     # get bottom half of the image
     bottom = sign[int(h * 0.5):, int(w * 0.3):int(w * 0.85)]
     # save bottom
-    cv2.imwrite("images/bottom{}.png".format(counter), bottom)
+
     # for x in range(0,h):
     #     for y in range (0,w):
     #         pixel = bottom[x,y]
