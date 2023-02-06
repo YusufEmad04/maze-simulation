@@ -97,3 +97,9 @@ class MazeRobot:
         self.rounded_pos = None
 
         self.visited_tiles = dict()
+
+        self.abs_half_tile = None
+
+        self.quarter_tiles = None
+
+        self.visited_quarters = dict()
