@@ -103,3 +103,5 @@ class MazeRobot:
         self.quarter_tiles = None
 
         self.visited_quarters = dict()
+
+        self.should_move_back = False

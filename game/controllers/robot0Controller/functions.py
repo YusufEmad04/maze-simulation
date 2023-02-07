@@ -14,7 +14,7 @@ def run_simulation(robot: MazeRobot, step=16):
     if robot.can_run_simulation:
         result = robot.robot.step(step)
         get_all_values(robot)
-        # print("current dir: {}".format(robot.current_direction))
+        print("current dir: {}".format(robot.current_direction))
         # print("rounded pos: ", robot.rounded_pos)
         # #print("next tile: ", robot.next_tile)
         # print_dict(check_walls(robot))
@@ -22,10 +22,13 @@ def run_simulation(robot: MazeRobot, step=16):
         # print_dict(check_neighbouring_tile(robot))
         # print_dict(robot.holes)
         # print_dict(robot.detected_signs)
-        print("robot pos: ", robot.robot_pos)
+        # print("robot pos: ", robot.robot_pos)
         print("get current half tile: ", robot.abs_half_tile)
         print("quarter tiles: ", robot.quarter_tiles)
         print("holes :", robot.holes)
+        print_dict(check_neighbouring_quarter_tile(robot))
+        # print_dict(get_neighbouring_quarter_tile(robot))
+        # print_dict(robot.visited_quarters)
         # print("quarter neighbours: ", check_neighbouring_quarter_tile(robot))
         # print_dict(robot.visited_quarters)
         print("-----------------")
@@ -402,6 +405,12 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
             check_camz(robot)
 
             if robot.can_run_simulation:
+
+                if robot.should_move_back:
+                    move_back_hole(robot)
+                    robot.should_move_back = False
+                    return False
+
                 move_forward2(robot, 6.221)
                 update_dir(robot)
             run_simulation(robot)
@@ -428,6 +437,12 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
 
             check_camz(robot)
             if robot.can_run_simulation:
+
+                if robot.should_move_back:
+                    move_back_hole(robot)
+                    robot.should_move_back = False
+                    return False
+
                 move_forward2(robot, 6.221)
                 update_dir(robot)
             run_simulation(robot)
@@ -700,8 +715,8 @@ def add_hole(robot: MazeRobot):
         if tile not in robot.holes:
             robot.holes[tile] = True
 
-    move_back_hole(robot)
-
+    # move_back_hole(robot)
+    robot.should_move_back = True
 
 def cam(img):
     rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
@@ -885,14 +900,7 @@ def get_quarter_tiles_around(robot: MazeRobot, robot_pos):
 
 
 def check_neighbour_holes(robot: MazeRobot):
-    current_tile = get_current_tile(robot)
-
-    tiles = [
-        ((current_tile[0], current_tile[1] - 12), "front"),
-        ((current_tile[0] + 12, current_tile[1]), "right"),
-        ((current_tile[0], current_tile[1] + 12), "back"),
-        ((current_tile[0] - 12, current_tile[1]), "left"),
-    ]
+    neighbours = get_neighbouring_quarter_tile(robot)
 
     neighbours_dict = {
         "front": False,
@@ -901,37 +909,12 @@ def check_neighbour_holes(robot: MazeRobot):
         "left": False
     }
 
-    # for tile in tiles:
-    #     for hole in robot.holes:
-    #         if get_dist(tile[0], hole) <= 3:
-    #             neighbours_dict[tile[1]] = False
+    for side in neighbours:
+        for q_t in neighbours[side]:
+            if q_t in robot.holes:
+                neighbours_dict[side] = True
 
-    for tile in tiles:
-        neighbours_dict[tile[1]] = value_in_dict(robot.holes, tile[0])
-
-    if robot.current_direction == 0:
-        return neighbours_dict
-    if robot.current_direction == 1:
-        return {
-            "front": neighbours_dict["right"],
-            "right": neighbours_dict["back"],
-            "back": neighbours_dict["left"],
-            "left": neighbours_dict["front"]
-        }
-    elif robot.current_direction == 2:
-        return {
-            "front": neighbours_dict["back"],
-            "right": neighbours_dict["left"],
-            "back": neighbours_dict["front"],
-            "left": neighbours_dict["right"]
-        }
-    elif robot.current_direction == 3:
-        return {
-            "front": neighbours_dict["left"],
-            "right": neighbours_dict["front"],
-            "back": neighbours_dict["right"],
-            "left": neighbours_dict["back"]
-        }
+    return neighbours_dict
 
 
 def check_neighbouring_tile(robot: MazeRobot):
@@ -984,7 +967,7 @@ def check_neighbouring_tile(robot: MazeRobot):
         }
 
 
-def check_neighbouring_quarter_tile(robot: MazeRobot):
+def get_neighbouring_quarter_tile(robot: MazeRobot):
     top_left = robot.quarter_tiles["top_left"]
     bottom_left = robot.quarter_tiles["bottom_left"]
     top_right = robot.quarter_tiles["top_right"]
@@ -992,20 +975,20 @@ def check_neighbouring_quarter_tile(robot: MazeRobot):
 
     neighbours = {
         "front": (
-            (top_left[0], top_left[1] - 3),
-            (top_right[0], top_right[1] - 3)
+            (top_left[0], top_left[1] - 6),
+            (top_right[0], top_right[1] - 6)
         ),
         "back": (
-            (bottom_left[0], bottom_left[1] + 3),
-            (bottom_right[0], bottom_right[1] + 3)
+            (bottom_left[0], bottom_left[1] + 6),
+            (bottom_right[0], bottom_right[1] + 6)
         ),
         "left": (
-            (top_left[0] - 3, top_left[1]),
-            (bottom_left[0] - 3, bottom_left[1])
+            (top_left[0] - 6, top_left[1]),
+            (bottom_left[0] - 6, bottom_left[1])
         ),
         "right": (
-            (top_right[0] + 3, top_right[1]),
-            (bottom_right[0] + 3, bottom_right[1])
+            (top_right[0] + 6, top_right[1]),
+            (bottom_right[0] + 6, bottom_right[1])
         )
         }
 
@@ -1034,16 +1017,35 @@ def check_neighbouring_quarter_tile(robot: MazeRobot):
         }
 
 
+def check_neighbouring_quarter_tile(robot: MazeRobot):
+    neighbours = get_neighbouring_quarter_tile(robot)
+
+    neighbours_dict = {
+        "front": True,
+        "right": True,
+        "back": True,
+        "left": True
+    }
+
+    for side in neighbours:
+        for q_t in neighbours[side]:
+            if q_t in robot.visited_quarters:
+                neighbours_dict[side] = False
+            if q_t in robot.holes:
+                neighbours_dict[side] = False
+
+    return neighbours_dict
+
 def right_left_back_walls(robot: MazeRobot):
 
-    right = check_walls(robot)["right_navigate"] or not check_neighbouring_tile(robot)["right"] or check_neighbour_holes(robot)["right"]
-    left = check_walls(robot)["left_navigate"] or not check_neighbouring_tile(robot)["left"] or check_neighbour_holes(robot)["left"]
-    back = check_walls(robot)["back"] or not check_neighbouring_tile(robot)["back"] or check_neighbour_holes(robot)["back"]
+    right = check_walls(robot)["right_navigate"] or not check_neighbouring_quarter_tile(robot)["right"] or check_neighbour_holes(robot)["right"]
+    left = check_walls(robot)["left_navigate"] or not check_neighbouring_quarter_tile(robot)["left"] or check_neighbour_holes(robot)["left"]
+    back = check_walls(robot)["back"] or not check_neighbouring_quarter_tile(robot)["back"] or check_neighbour_holes(robot)["back"]
 
-    print("right", right)
-    print("left", left)
-    print("back", back)
-    print("-----------------")
+    print("right_____", right)
+    print("left______", left)
+    print("back______", back)
+    print("----------catcat-------")
 
     return right and left and back
 
@@ -1081,7 +1083,31 @@ def navigate(robot: MazeRobot):
         else:
             print("elseeeeeeeeeeeeeee")
             turn_90_time_step(robot, "left")
+def navigate2(robot:MazeRobot):
+    """
+    if no wall right.... go right
+    if wall right.... go forward
+    if wall right, forward.... go left
+    if hole...simulate it as wall and change dir when turning
+    """
 
+    if not(check_walls(robot)["right_navigate"]) and check_neighbouring_quarter_tile(robot)["right"]:
+        print("Turn Right")
+        turn_90_time_step(robot, "right")
+
+        move_one_tile_gps(robot, True)
+    else:
+        if check_walls(robot)["front"] or check_neighbour_holes(robot)["front"]:
+            turn_90_time_step(robot, "left")
+
+        elif (not check_walls(robot)["front"] and check_neighbouring_quarter_tile(robot)["front"]) or right_left_back_walls(robot):
+           print("Move Front")
+
+           move_one_tile_gps(robot, True)
+
+        else:
+            print("Turn Left")
+            turn_90_time_step(robot, "left")
 
 def round_to_12(x):
     return 12 * ((x + 6) // 12)

@@ -18,7 +18,7 @@ class RunningRobot(MazeRobot):
         update_dir(self)
         # start_server(self)
         while self.can_run_simulation:
-            navigate(self)
+            navigate2(self)
 
             run_simulation(self, 16)
 
