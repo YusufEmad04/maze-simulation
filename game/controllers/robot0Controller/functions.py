@@ -27,6 +27,8 @@ def run_simulation(robot: MazeRobot, step=16):
         print("quarter tiles: ", robot.quarter_tiles)
         print("holes :", robot.holes)
         print_dict(check_neighbouring_quarter_tile(robot))
+        print("right_navigate:", check_walls(robot)["right_navigate"])
+        print("left_navigate:", check_walls(robot)["left_navigate"])
         # print_dict(get_neighbouring_quarter_tile(robot))
         # print_dict(robot.visited_quarters)
         # print("quarter neighbours: ", check_neighbouring_quarter_tile(robot))
@@ -759,10 +761,23 @@ def cam(img):
 def check_walls(robot: MazeRobot):
     right_rays_in_range = 3 < robot.lidar_data[2][128 - 20] < 17 and 3 < robot.lidar_data[2][128 + 20] < 17
     left_rays_in_range = 3 < robot.lidar_data[2][384 - 20] < 17 and 3 < robot.lidar_data[2][384 + 20] < 17
-    front_rays_in_range = robot.lidar_data[2][0 - 20] < 17 or robot.lidar_data[2][0 + 20] < 17 or robot.lidar_data[2][
-        0] < 17
-    back_rays_in_range = robot.lidar_data[2][256 - 20] < 17 or robot.lidar_data[2][256 + 20] < 17 or \
-                         robot.lidar_data[2][256] < 17
+     # front_rays_in_range = robot.lidar_data[2][0 - 20] < 17 or robot.lidar_data[2][0 + 20] < 17 or robot.lidar_data[2][
+    #     0] < 17
+    # back_rays_in_range = robot.lidar_data[2][256 - 20] < 17 or robot.lidar_data[2][256 + 20] < 17 or \
+    #                      robot.lidar_data[2][256] < 17
+
+    front_rays_in_range = False
+    back_rays_in_range = False
+
+    for i in range(-20, 20):
+        if robot.lidar_data[2][0 + i] < 17:
+            front_rays_in_range = True
+            break
+
+    for i in range(-20, 20):
+        if robot.lidar_data[2][256 + i] < 17:
+            back_rays_in_range = True
+            break
 
     right_difference1 = abs(robot.lidar_data[2][128] - robot.lidar_data[2][128 + 40])
     right_difference2 = abs(robot.lidar_data[2][128] - robot.lidar_data[2][128 - 40])
@@ -775,13 +790,25 @@ def check_walls(robot: MazeRobot):
     front = front_rays_in_range
     back = back_rays_in_range
 
-    right_navigate = robot.lidar_data[2][128 - 20] < 17 or robot.lidar_data[2][128 + 20] < 17 or robot.lidar_data[2][
-        128] < 17
-    left_navigate = robot.lidar_data[2][384 - 20] < 17 or robot.lidar_data[2][384 + 20] < 17 or robot.lidar_data[2][
-        384] < 17
-
+    # right_navigate = robot.lidar_data[2][128 - 20] < 17 or robot.lidar_data[2][128 + 20] < 17 or robot.lidar_data[2][
+    #     128] < 17
+    # left_navigate = robot.lidar_data[2][384 - 20] < 17 or robot.lidar_data[2][384 + 20] < 17 or robot.lidar_data[2][
+    #     384] < 17
+    #
     front_mid_tile = robot.lidar_data[2][0 - 20] < 10 or robot.lidar_data[2][0] < 9 or robot.lidar_data[2][0 + 20] < 10
 
+
+    right_navigate = False
+    for i in range(-20, 21):
+        if robot.lidar_data[2][128 + i] < 17:
+            right_navigate = True
+            break
+
+    left_navigate = False
+    for i in range(-20, 21):
+        if robot.lidar_data[2][384 + i] < 17:
+            left_navigate = True
+            break
     # print("right rays: {}   {}".format(robot.lidar_data[2][128 - 20], robot.lidar_data[2][128 + 20]))
 
     return {
@@ -1028,9 +1055,9 @@ def check_neighbouring_quarter_tile(robot: MazeRobot):
     }
 
     for side in neighbours:
+        if neighbours[side][0] in robot.visited_quarters and neighbours[side][1] in robot.visited_quarters:
+            neighbours_dict[side] = False
         for q_t in neighbours[side]:
-            if q_t in robot.visited_quarters:
-                neighbours_dict[side] = False
             if q_t in robot.holes:
                 neighbours_dict[side] = False
 
