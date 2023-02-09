@@ -40,6 +40,7 @@ def contour_without_blue(img):
 
     return True
 
+
 def sign_detection(img):
     global counter
     counter += 1

@@ -23,16 +23,17 @@ def run_simulation(robot: MazeRobot, step=16):
         # print_dict(robot.holes)
         # print_dict(robot.detected_signs)
         # print("robot pos: ", robot.robot_pos)
-        print("get current half tile: ", robot.abs_half_tile)
-        print("quarter tiles: ", robot.quarter_tiles)
-        print("holes :", robot.holes)
-        print_dict(check_neighbouring_quarter_tile(robot))
-        print("right_navigate:", check_walls(robot)["right_navigate"])
-        print("left_navigate:", check_walls(robot)["left_navigate"])
+        # print("get current half tile: ", robot.abs_half_tile)
+        # print("quarter tiles: ", robot.quarter_tiles)
+        # print("holes :", robot.holes)
+        # print_dict(check_neighbouring_quarter_tile(robot))
+        # print("right_navigate:", check_walls(robot)["right_navigate"])
+        # print("left_navigate:", check_walls(robot)["left_navigate"])
         # print_dict(get_neighbouring_quarter_tile(robot))
         # print_dict(robot.visited_quarters)
         # print("quarter neighbours: ", check_neighbouring_quarter_tile(robot))
         # print_dict(robot.visited_quarters)
+        print(robot.detected_signs)
         print("-----------------")
 
         robot.counter += 1
@@ -322,7 +323,7 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
 
     for i in range(x):
 
-        check_camz(robot)
+        check_camz(robot, direction, x=i)
                 # stop(robot, 150)
 
         turn_left(robot, speed)
@@ -351,16 +352,18 @@ def update_dir(robot: MazeRobot):
     x_diff = robot.robot_pos[0] - start[0]
     y_diff = robot.robot_pos[1] - start[1]
 
-    if abs(x_diff) > abs(y_diff):
-        if x_diff > 0:
-            robot.current_direction = 1
+    if not(abs(x_diff) <= 0.00005 and abs(y_diff) <= 0.00005):
+
+        if abs(x_diff) > abs(y_diff):
+            if x_diff > 0:
+                robot.current_direction = 1
+            else:
+                robot.current_direction = 3
         else:
-            robot.current_direction = 3
-    else:
-        if y_diff > 0:
-            robot.current_direction = 2
-        else:
-            robot.current_direction = 0
+            if y_diff > 0:
+                robot.current_direction = 2
+            else:
+                robot.current_direction = 0
 
 
 def move_one_tile_gps(robot: MazeRobot, half=False):
@@ -905,38 +908,78 @@ def send_end(robot: MazeRobot):
     robot.emitter.send(bytes('E', "utf-8"))
 
 
-def check_camz(robot: MazeRobot, _detected=False):
-    current_x = int(robot.robot_pos[0])
-    current_y = int(robot.robot_pos[1])
-    not_visited = True
+def add_victim(robot: MazeRobot, is_right, direction=None, x=-1):
+    # Function to add vitim location
+    dir_dict = {
+        0: False,
+        1: False,
+        2: False,
+        3: False
+    }
+    robot_dir = robot.current_direction
+
+    if direction:
+        if direction == "right":
+            if x < 35:
+                robot_dir -= 1
+        elif direction == "left":
+            if x < 35:
+                robot_dir += 1
+
+    if is_right:
+        victim_dir = (robot_dir + 1) % 4
+    else:
+        victim_dir = (robot_dir - 1) % 4
+
+    dir_dict[victim_dir] = True
+
+    sign_pos = value_in_dict(robot.detected_signs, robot.robot_pos)
+
+    if sign_pos:
+        if robot.detected_signs[sign_pos][victim_dir]:
+            # Same sign
+            return False
+        else:
+            # Set sign (same pos, diff dir)
+            robot.detected_signs[sign_pos][victim_dir] = True
+            return True
+    else:
+        # New sign (New pos, new dir)
+        robot.detected_signs[(robot.robot_pos[0], robot.robot_pos[1])] = dir_dict
+        return True
+
+
+def check_camz(robot: MazeRobot, direction=None, _detected=False, x=-1):
+    saw_victim = False
+    is_right = True
 
     # for i in robot.detected_signs:
     #     if get_dist(i, (current_x, current_y)) <= math.sqrt(2):
-    #         not_visited = False
+    #         saw_victim = False
 
-    not_visited = not value_in_dict(robot.detected_signs, (current_x, current_y))
+    # saw_victim = not value_in_dict(robot.detected_signs, (current_x, current_y))
+    if moving_cam(robot.right_image) and check_walls(robot)["right_navigate"]:
+        print("ON right")
+        saw_victim = add_victim(robot, is_right, direction, x)
+
+    if moving_cam(robot.left_image) and check_walls(robot)["left_navigate"]:
+        print("ON left")
+        is_right = False
+        saw_victim = add_victim(robot, is_right, direction, x)
 
     # Detect with right camera
-    if moving_cam(robot.right_image) and check_walls(robot)["right_navigate"] and not_visited:
+    if saw_victim and is_right:
         _detected = True
         victim_type = full_detection(robot.right_image)
         # print("right")
         send_victim(robot, victim_type)
 
-        x = int(robot.robot_pos[0])
-        y = int(robot.robot_pos[1])
-        robot.detected_signs[(x, y)] = True
-
     # Detect with left camera
-    if moving_cam(robot.left_image) and check_walls(robot)["left_navigate"] and not_visited:
+    if saw_victim and not is_right:
         _detected = True
         victim_type = full_detection(robot.left_image)
         # print("left")
         send_victim(robot, victim_type)
-
-        x = int(robot.robot_pos[0])
-        y = int(robot.robot_pos[1])
-        robot.detected_signs[(x, y)] = True
 
     return _detected
 
@@ -1216,6 +1259,6 @@ def value_in_dict(d, value):
     found = False
     for i in d:
         if get_dist(i, value) <= 3:
-            found = True
+            found = i
 
     return found
