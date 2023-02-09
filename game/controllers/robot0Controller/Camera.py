@@ -4,6 +4,25 @@ import numpy as np
 
 counter = 0
 
+def get_mean_color(img):
+    # get the mean color of the image
+    mean_color = np.mean(img, axis=(0, 1))
+    return mean_color
+
+def sign_is_mostly_blue(img):
+    '''
+    b 125, 150
+    g 110, 130
+    r 20 70
+    '''
+
+    lower = np.array([120, 100, 20])
+    upper = np.array([160, 145, 80])
+
+    mean_color = get_mean_color(img)
+
+    if np.all(mean_color >= lower) and np.all(mean_color <= upper) and mean_color[0] > mean_color[1] > mean_color[2]:
+        return True
 
 def sign_detection(img):
     global counter
@@ -19,7 +38,7 @@ def sign_detection(img):
     # cv2.imshow("HSV" , hsv)
 
     # binary thresholding
-    ret, thresh = cv2.threshold(blur, 135, 255, cv2.THRESH_BINARY)  # 135
+    ret, thresh = cv2.threshold(blur, 120, 255, cv2.THRESH_BINARY)  # 135
     # cv2.imshow("blur" , blur)
 
     # finding contours (white frame) in thresholded image
@@ -38,14 +57,18 @@ def sign_detection(img):
         image_detected = False
         for c in cnts:
             [x, y, w, h] = cv2.boundingRect(c)
-            if w > 18 and h > 18 and (5 < x < 20) and y < 25:
+
+            sign_colored = img[y:y + h, x:x + w]
+
+            if w > 18 and h > 18 and (5 < x < 20) and y < 25 and not sign_is_mostly_blue(sign_colored):
+
                 img_copy = img.copy()
                 # draw bounding box
                 cv2.rectangle(img_copy, (x, y), (x + w, y + h), (36, 255, 12), 2)
                 # save the image
                 # crop the image to be contour co-ordinates
                 sign = thresh[y:y + h, x:x + w]  # crop thresh img
-                sign_colored = img[y:y + h, x:x + w]  # crop blurred original img
+                  # crop blurred original img
                 # cv2.imshow("sign" , sign)
                 # cv2.imshow("sign colored" , sign_colored)
                 image_detected = True
