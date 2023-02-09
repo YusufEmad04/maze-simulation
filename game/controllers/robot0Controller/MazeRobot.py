@@ -92,6 +92,10 @@ class MazeRobot:
 
         self.holes = dict()
 
+        self.area_connection_tiles = dict()
+        self.current_area = 1
+        self.area_flag = False
+
         self.next_tile = []
 
         self.rounded_pos = None

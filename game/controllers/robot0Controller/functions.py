@@ -14,7 +14,7 @@ def run_simulation(robot: MazeRobot, step=16):
     if robot.can_run_simulation:
         result = robot.robot.step(step)
         get_all_values(robot)
-        print("current dir: {}".format(robot.current_direction))
+        # print("current dir: {}".format(robot.current_direction))
         # print("rounded pos: ", robot.rounded_pos)
         # #print("next tile: ", robot.next_tile)
         # print_dict(check_walls(robot))
@@ -669,7 +669,28 @@ def move_back_hole(robot: MazeRobot):
         # stop(robot, 100)
 
 
-# # Avoid holes and swamps by looking at the RBG colour of the camera
+def update_area(robot: MazeRobot):
+    # Change current area when see connection tile
+    robot.area_flag = True
+    if robot.color_case == "red":
+        if robot.current_area == 2:
+            robot.current_area = 3
+        else:
+            robot.current_area = 2
+
+    elif robot.color_case == "blue":
+        if robot.current_area == 1:
+            robot.current_area = 2
+        else:
+            robot.current_area = 1
+
+    elif robot.color_case == "purple":
+        if robot.current_area == 1:
+            robot.current_area = 3
+        else:
+            robot.current_area = 1
+
+
 def view_colour(robot: MazeRobot):
     color_case = ""
     r, g, b = robot.color_sensor_values
@@ -677,24 +698,32 @@ def view_colour(robot: MazeRobot):
     if (r >= 200) and (g >= 200) and (b >= 200):
         # print("White")
         robot.color_case = "white"
+        robot.area_flag = False
+
     elif 185 <= r <= 205 and 150 <= g <= 170 and 80 <= b <= 100:
         # print("Orange")
         # TODO Rename swamp to Shorbet 3ads
         robot.color_case = "swamp"
+
     elif (r < 70) and (g < 70) and (b < 70):
         # print("Black")
         robot.color_case = "black"
         add_hole(robot)
-        # if robot.next_tile:
-        #     add_hole = True
-        #     for hole in robot.holes:
-        #         if get_dist(hole, robot.next_tile) < 6:
-        #             add_hole = False
-        #             break
-        #
-        #     if add_hole:
-        #         robot.holes[robot.next_tile] = True
-        #     move_back_hole(robot)
+
+    elif r >= 235 and 50 <= g <= 90 and 50 <= b <= 90:
+        # print("Red")
+        robot.color_case = "red"
+        add_connection_tile(robot, robot.color_case)
+
+    elif 50 <= r <= 90 and 50 <= g <= 90 and b >= 235:
+        # print("Blue")
+        robot.color_case = "blue"
+        add_connection_tile(robot, robot.color_case)
+
+    elif 125 <= r <= 170 and 40 <= g <= 80 and 200 <= b <= 240:
+        # print("Purple")
+        robot.color_case = "purple"
+        add_connection_tile(robot, robot.color_case)
 
     return robot.color_case
 
@@ -719,6 +748,39 @@ def add_hole(robot: MazeRobot):
 
     # move_back_hole(robot)
     robot.should_move_back = True
+
+
+# TODO Unlike Holes, robot enters the connections tiles so error occurs in adding dict so the flag and
+#  only add type once is a workaround
+def add_connection_tile(robot: MazeRobot, type):
+    if robot.current_direction in (1, 2):
+        sign = 1
+    else:
+        sign = -1
+
+    if robot.current_direction in (0, 2):
+        connection_tile = (robot.abs_half_tile[0], robot.abs_half_tile[1] + sign * 12)
+    else:
+        connection_tile = (robot.abs_half_tile[0] + sign * 12, robot.abs_half_tile[1])
+
+    connection_quarters = get_quarter_tiles_around(robot, connection_tile)
+
+    if not robot.area_flag:
+        # Condition to add tile of same colour once
+        add_tile = True
+        for tile in robot.area_connection_tiles:
+            if robot.area_connection_tiles[tile] == type:
+                add_tile = False
+
+        if add_tile:
+            for key in connection_quarters:
+                tile = connection_quarters[key]
+                if tile not in robot.area_connection_tiles:
+                    robot.area_connection_tiles[tile] = type
+                    robot.area_flag = True
+
+        update_area(robot)
+
 
 def cam(img):
     rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
