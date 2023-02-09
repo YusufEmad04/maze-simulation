@@ -24,6 +24,22 @@ def sign_is_mostly_blue(img):
     if np.all(mean_color >= lower) and np.all(mean_color <= upper) and mean_color[0] > mean_color[1] > mean_color[2]:
         return True
 
+def contour_without_blue(img):
+    image_dimensions = img.shape
+
+    upper_left = img[0:int(image_dimensions[0]/2), 0:int(image_dimensions[1]/2)]
+    upper_right = img[0:int(image_dimensions[0]/2), int(image_dimensions[1]/2):image_dimensions[1]]
+    lower_left = img[int(image_dimensions[0]/2):image_dimensions[0], 0:int(image_dimensions[1]/2)]
+    lower_right = img[int(image_dimensions[0]/2):image_dimensions[0], int(image_dimensions[1]/2):image_dimensions[1]]
+
+    quadrants = [upper_left, upper_right, lower_left, lower_right]
+
+    for quadrant in quadrants:
+        if sign_is_mostly_blue(quadrant):
+            return False
+
+    return True
+
 def sign_detection(img):
     global counter
     counter += 1
@@ -60,7 +76,7 @@ def sign_detection(img):
 
             sign_colored = img[y:y + h, x:x + w]
 
-            if w > 18 and h > 18 and (5 < x < 20) and y < 25 and not sign_is_mostly_blue(sign_colored):
+            if w > 18 and h > 18 and (5 < x < 20) and y < 25 and contour_without_blue(sign_colored):
 
                 img_copy = img.copy()
                 # draw bounding box
