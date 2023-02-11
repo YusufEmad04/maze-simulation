@@ -50,6 +50,9 @@ class MazeRobot:
         self.directions = ["front", "right", "back", "left"]
         self.current_direction = 0
 
+        self.is_rotating = False
+        self.is_moving = False
+
         self.hole_direction_pos = [-1, [0, 0]]
 
         self.left_encoder = self.left_wheel.getPositionSensor()  # Encoder initialization
@@ -107,5 +110,6 @@ class MazeRobot:
         self.quarter_tiles = None
 
         self.visited_quarters = dict()
+        self.unvisited_quarters = dict()
 
         self.should_move_back = False
