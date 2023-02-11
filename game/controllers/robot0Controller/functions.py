@@ -327,15 +327,17 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
                 # stop(robot, 150)
 
         turn_left(robot, speed)
+        robot.is_rotating = True
 
         if robot.can_run_simulation:
             run_simulation(robot, step=16)
-
+    robot.is_rotating = False
+    robot.robot_position_list = []
     print("rotation finished")
 
 
 def update_dir(robot: MazeRobot):
-
+    should_update = True
     if robot.time_step <= 3:
         start = robot.robot_pos.copy()
         t = 1
@@ -347,26 +349,33 @@ def update_dir(robot: MazeRobot):
         set_right_vel(robot, 0)
         set_left_vel(robot, 0)
     else:
-        start = robot.robot_position_list[0]
-
-    x_diff = robot.robot_pos[0] - start[0]
-    y_diff = robot.robot_pos[1] - start[1]
-
-    if not(abs(x_diff) <= 0.00005 and abs(y_diff) <= 0.00005):
-
-        if abs(x_diff) > abs(y_diff):
-            if x_diff > 0:
-                robot.current_direction = 1
-            else:
-                robot.current_direction = 3
+        if robot.robot_position_list:
+            start = robot.robot_position_list[0]
         else:
-            if y_diff > 0:
-                robot.current_direction = 2
+            should_update = False
+
+    if should_update:
+        x_diff = robot.robot_pos[0] - start[0]
+        y_diff = robot.robot_pos[1] - start[1]
+
+        if not(abs(x_diff) <= 0.00005 and abs(y_diff) <= 0.00005):
+
+            if abs(x_diff) > abs(y_diff):
+                if x_diff > 0:
+                    robot.current_direction = 1
+                else:
+                    robot.current_direction = 3
             else:
-                robot.current_direction = 0
+                if y_diff > 0:
+                    robot.current_direction = 2
+                else:
+                    robot.current_direction = 0
 
 
 def move_one_tile_gps(robot: MazeRobot, half=False):
+    if not robot.is_moving:
+        add_unvisited_quarter_tiles(robot)
+
     if half:
         length = 6
         for_loop_start = 2
@@ -417,6 +426,7 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
                     return False
 
                 move_forward2(robot, 6.221)
+                robot.is_moving = True
                 update_dir(robot)
             run_simulation(robot)
 
@@ -449,10 +459,12 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
                     return False
 
                 move_forward2(robot, 6.221)
+                robot.is_moving = True
                 update_dir(robot)
             run_simulation(robot)
 
     # print("new gps done at {},  {}".format(*robot.robot_pos))
+    robot.is_moving = False
     robot.visited_tiles[robot.rounded_pos] += 1
 
 
@@ -487,14 +499,13 @@ def get_gps(robot: MazeRobot):
     get_current_tile2(robot)
     quarter_tiles = get_quarter_tiles_around(robot, robot.abs_half_tile)
 
-    # for q_t in quarter_tiles:
-    #     if q_t not in robot.visited_quarters:
-    #         robot.visited_quarters[q_t[0]] = True
-
     for key in quarter_tiles:
         tile = quarter_tiles[key]
         if tile not in robot.visited_quarters:
             robot.visited_quarters[tile] = True
+            # Remove visited tile from unvisited dict
+            if value_in_dict(robot.unvisited_quarters, tile):
+                del robot.unvisited_quarters[tile]
 
 
 def get_dist(pos1, pos2):
@@ -748,6 +759,9 @@ def add_hole(robot: MazeRobot):
         tile = hole_quarters[key]
         if tile not in robot.holes:
             robot.holes[tile] = True
+            # Remove Holes from unvisited dict
+            if value_in_dict(robot.unvisited_quarters, tile):
+                del robot.unvisited_quarters[tile]
 
     # move_back_hole(robot)
     robot.should_move_back = True
@@ -1104,6 +1118,28 @@ def check_neighbouring_tile(robot: MazeRobot):
         }
 
 
+def is_neighbour_quarter_valid(robot: MazeRobot, q_t, direction):
+    if direction in ["right", "left"]:
+        direction = direction + "_navigate"
+
+    # Check if neighbour quarter is not outside wall, not hole, not visited
+    if robot.time_step > 6:
+        if not value_in_dict(robot.visited_quarters, q_t) and not value_in_dict(robot.holes, q_t) and \
+                not check_walls(robot)[direction]:
+            return True
+        else:
+            return False
+
+
+def add_unvisited_quarter_tiles(robot: MazeRobot):
+    if not robot.is_rotating:
+        neighbours = get_neighbouring_quarter_tile(robot)
+        for direction in neighbours:
+            for q_t in neighbours[direction]:
+                if is_neighbour_quarter_valid(robot, q_t, direction):
+                    robot.unvisited_quarters[q_t] = True
+
+
 def get_neighbouring_quarter_tile(robot: MazeRobot):
     top_left = robot.quarter_tiles["top_left"]
     bottom_left = robot.quarter_tiles["bottom_left"]
@@ -1173,6 +1209,7 @@ def check_neighbouring_quarter_tile(robot: MazeRobot):
 
     return neighbours_dict
 
+
 def right_left_back_walls(robot: MazeRobot):
 
     right = check_walls(robot)["right_navigate"] or not check_neighbouring_quarter_tile(robot)["right"] or check_neighbour_holes(robot)["right"]
@@ -1220,6 +1257,8 @@ def navigate(robot: MazeRobot):
         else:
             print("elseeeeeeeeeeeeeee")
             turn_90_time_step(robot, "left")
+
+            
 def navigate2(robot:MazeRobot):
     """
     if no wall right.... go right
@@ -1238,13 +1277,14 @@ def navigate2(robot:MazeRobot):
             turn_90_time_step(robot, "left")
 
         elif (not check_walls(robot)["front"] and check_neighbouring_quarter_tile(robot)["front"]) or right_left_back_walls(robot):
-           print("Move Front")
+            print("Move Front")
 
-           move_one_tile_gps(robot, True)
+            move_one_tile_gps(robot, True)
 
         else:
             print("Turn Left")
             turn_90_time_step(robot, "left")
+
 
 def round_to_12(x):
     return 12 * ((x + 6) // 12)
