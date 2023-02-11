@@ -834,7 +834,7 @@ def check_walls(robot: MazeRobot):
     front_rays_in_range = False
     back_rays_in_range = False
 
-    for i in range(-20, 20):
+    for i in range(-30, 30):
         if robot.lidar_data[2][0 + i] < 17:
             front_rays_in_range = True
             break
@@ -860,8 +860,13 @@ def check_walls(robot: MazeRobot):
     # left_navigate = robot.lidar_data[2][384 - 20] < 17 or robot.lidar_data[2][384 + 20] < 17 or robot.lidar_data[2][
     #     384] < 17
     #
-    front_mid_tile = robot.lidar_data[2][0 - 20] < 10 or robot.lidar_data[2][0] < 9 or robot.lidar_data[2][0 + 20] < 10
+    # front_mid_tile = robot.lidar_data[2][0 - 20] < 10 or robot.lidar_data[2][0] < 9 or robot.lidar_data[2][0 + 20] < 10
+    front_mid_tile = False
 
+    for i in range(-30, 31):
+        if robot.lidar_data[2][i] < 10:
+            front_mid_tile = True
+            break
 
     right_navigate = False
     for i in range(-20, 21):
@@ -958,11 +963,11 @@ def check_camz(robot: MazeRobot, direction=None, _detected=False, x=-1):
     #         saw_victim = False
 
     # saw_victim = not value_in_dict(robot.detected_signs, (current_x, current_y))
-    if moving_cam(robot.right_image) and check_walls(robot)["right_navigate"]:
+    if check_walls(robot)["right_navigate"] and moving_cam(robot.right_image):
         print("ON right")
         saw_victim = add_victim(robot, is_right, direction, x)
 
-    if moving_cam(robot.left_image) and check_walls(robot)["left_navigate"]:
+    if check_walls(robot)["left_navigate"] and moving_cam(robot.left_image):
         print("ON left")
         is_right = False
         saw_victim = add_victim(robot, is_right, direction, x)
