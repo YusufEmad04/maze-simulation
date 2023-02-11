@@ -40,27 +40,37 @@ def contour_without_blue(img):
 
     return True
 
+def get_image_contours(image):
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    lower1 = np.array([0, 0, 110]) # lower white
+    upper1 = np.array([180, 40, 255]) # upper white
+
+    mask1 = cv2.inRange(hsv_image, lower1, upper1) # mask white
+
+    lower2 = np.array([0, 50, 50]) # lower1 red
+    upper2 = np.array([50, 255, 255]) # upper1 red
+
+    mask2 = cv2.inRange(hsv_image, lower2, upper2) # mask red
+
+    lower3 = np.array([125, 0, 0]) # lower2 red
+    upper3 = np.array([180, 255, 255]) # upper2 red
+
+    mask3 = cv2.inRange(hsv_image, lower3, upper3) # mask red
+
+    mask_red = cv2.bitwise_or(mask3, mask2) # mask red
+
+    mask = cv2.bitwise_or(mask1, mask_red) # mask white and red
+
+    cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    return cnts, mask
 
 def sign_detection(img):
     global counter
     counter += 1
 
-    # img= cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # gray scale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    blur = cv2.blur(gray, (1, 1))
-    blur_origin = cv2.blur(img, (1, 1))
-    hsv = cv2.cvtColor(blur_origin, cv2.COLOR_RGB2HSV)
-    # cv2.imshow("HSV" , hsv)
-
-    # binary thresholding
-    ret, thresh = cv2.threshold(blur, 120, 255, cv2.THRESH_BINARY)  # 135
-    # cv2.imshow("blur" , blur)
-
-    # finding contours (white frame) in thresholded image
-    cnts, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    sign_pixel_count = cv2.countNonZero(thresh)
+    cnts, binary_image = get_image_contours(img)
 
     # print("number of contours found" , len(cnts))
     if len(cnts) > 0:
@@ -68,8 +78,8 @@ def sign_detection(img):
         # cv2.imshow("thresh",thresh)
 
         # get co-ordinates of the contour
-        sign = thresh[0:1, 0:1]
-        sign_colored = hsv[0:1, 0:1]
+        sign = None
+        sign_colored = None
 
         image_detected = False
         for c in cnts:
@@ -82,9 +92,12 @@ def sign_detection(img):
                 img_copy = img.copy()
                 # draw bounding box
                 cv2.rectangle(img_copy, (x, y), (x + w, y + h), (36, 255, 12), 2)
+
+                cv2.imwrite("images/" + str(counter) + ".png", img_copy)
+                counter += 1
                 # save the image
                 # crop the image to be contour co-ordinates
-                sign = thresh[y:y + h, x:x + w]  # crop thresh img
+                sign = binary_image[y:y + h, x:x + w]  # crop thresh img
                   # crop blurred original img
                 # cv2.imshow("sign" , sign)
                 # cv2.imshow("sign colored" , sign_colored)
