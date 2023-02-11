@@ -952,19 +952,19 @@ def add_victim(robot: MazeRobot, is_right, direction=None, x=-1):
 
     dir_dict[victim_dir] = True
 
-    sign_pos = value_in_dict(robot.detected_signs, robot.robot_pos)
+    sign_pos_found = value_in_dict(robot.detected_signs, (int(robot.robot_pos[0]), int(robot.robot_pos[1])))
 
-    if sign_pos:
-        if robot.detected_signs[sign_pos][victim_dir]:
+    if sign_pos_found:
+        if robot.detected_signs[sign_pos_found][victim_dir]:
             # Same sign
             return False
         else:
             # Set sign (same pos, diff dir)
-            robot.detected_signs[sign_pos][victim_dir] = True
+            robot.detected_signs[sign_pos_found][victim_dir] = True
             return True
     else:
         # New sign (New pos, new dir)
-        robot.detected_signs[(robot.robot_pos[0], robot.robot_pos[1])] = dir_dict
+        robot.detected_signs[(int(robot.robot_pos[0]), int(robot.robot_pos[1]))] = dir_dict
         return True
 
 
@@ -1303,7 +1303,7 @@ def close_to_12(x):
 def value_in_dict(d, value):
     found = False
     for i in d:
-        if get_dist(i, value) <= 3:
+        if get_dist(i, value) <= 4.5:
             found = i
 
     return found
