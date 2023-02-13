@@ -957,7 +957,7 @@ def add_victim(robot: MazeRobot, is_right, direction=None, x=-1):
 
     if direction:
         if direction == "right":
-            if x < 35:
+            if x < 20:
                 robot_dir -= 1
         elif direction == "left":
             if x < 35:
