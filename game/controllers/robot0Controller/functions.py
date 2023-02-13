@@ -6,6 +6,7 @@ from MazeRobot import MazeRobot
 from Camera import moving_cam
 from Camera import full_detection
 import struct
+from node import TileNode
 
 max_speed = 6.28
 
@@ -33,7 +34,9 @@ def run_simulation(robot: MazeRobot, step=16):
         # print_dict(robot.visited_quarters)
         # print("quarter neighbours: ", check_neighbouring_quarter_tile(robot))
         # print_dict(robot.visited_quarters)
-        print(robot.detected_signs)
+        # print(robot.detected_signs)
+        print(robot.tiles_graph)
+        print("Haf Tile: ", robot.abs_half_tile)
         print("-----------------")
 
         robot.counter += 1
@@ -375,6 +378,7 @@ def update_dir(robot: MazeRobot):
 def move_one_tile_gps(robot: MazeRobot, half=False):
     if not robot.is_moving:
         add_unvisited_quarter_tiles(robot)
+        update_graph(robot)
 
     if half:
         length = 6
@@ -1201,8 +1205,8 @@ def check_neighbouring_quarter_tile(robot: MazeRobot):
     }
 
     for side in neighbours:
-        if neighbours[side][0] in robot.visited_quarters and neighbours[side][1] in robot.visited_quarters:
-            neighbours_dict[side] = False
+        # if neighbours[side][0] in robot.visited_quarters and neighbours[side][1] in robot.visited_quarters:
+        #     neighbours_dict[side] = False
         for q_t in neighbours[side]:
             if q_t in robot.holes:
                 neighbours_dict[side] = False
@@ -1307,3 +1311,125 @@ def value_in_dict(d, value):
             found = i
 
     return found
+
+
+def quarters_relative_to_robot(robot: MazeRobot):
+    quarters = robot.quarter_tiles
+    if robot.current_direction == 0:
+        return quarters
+    elif robot.current_direction == 1:
+        return {
+            "top_left": quarters["top_right"],
+            "top_right": quarters["bottom_right"],
+            "bottom_right": quarters["bottom_left"],
+            "bottom_left": quarters["top_left"]
+        }
+    elif robot.current_direction == 2:
+        return {
+            "top_left": quarters["bottom_right"],
+            "top_right": quarters["bottom_left"],
+            "bottom_right": quarters["top_left"],
+            "bottom_left": quarters["top_right"]
+        }
+    elif robot.current_direction == 3:
+        return {
+            "top_left": quarters["bottom_left"],
+            "top_right": quarters["top_left"],
+            "bottom_right": quarters["top_right"],
+            "bottom_left": quarters["bottom_right"]
+        }
+
+def order_quarters(quarters):
+    # return a tuple of quarters in order of (x_min, y_min), (x_min, y_max), (x_max, y_min), (x_max, y_max)
+    x_min = min(quarters, key=lambda x: x[0])[0]
+    y_min = min(quarters, key=lambda x: x[1])[1]
+    x_max = max(quarters, key=lambda x: x[0])[0]
+    y_max = max(quarters, key=lambda x: x[1])[1]
+
+    return (x_min, y_min), (x_min, y_max), (x_max, y_min), (x_max, y_max)
+
+
+def update_graph(robot: MazeRobot):
+    walls = check_walls(robot)
+    holes = check_neighbour_holes(robot)
+    quarters = quarters_relative_to_robot(robot)
+    neighbour_quarters = get_neighbouring_quarter_tile(robot)
+
+    valid_neighbours = {
+        "front": True,
+        "right": True,
+        "back": True,
+        "left": True
+    }
+    for side in valid_neighbours:
+        if side in ("right", "left"):
+            if walls[side + "_navigate"]:
+                valid_neighbours[side] = False
+        else:
+            if walls[side]:
+                valid_neighbours[side] = False
+        if holes[side]:
+            valid_neighbours[side] = False
+
+    for side in valid_neighbours:
+        if valid_neighbours[side]:
+            if side == "front":
+                neighbour_node_quarters = order_quarters((
+                    quarters["top_left"],
+                    quarters["top_right"],
+                    neighbour_quarters["front"][0],
+                    neighbour_quarters["front"][1]
+
+                ))
+
+                current_node_quarters = order_quarters([robot.quarter_tiles[s] for s in robot.quarter_tiles])
+
+                current_node = TileNode(current_node_quarters)
+                neighbour_node = TileNode(neighbour_node_quarters, visited=False)
+
+
+                robot.tiles_graph.add_node(current_node, neighbour_node)
+            elif side == "right":
+                neighbour_node_quarters = order_quarters((
+                    quarters["top_right"],
+                    quarters["bottom_right"],
+                    neighbour_quarters["right"][0],
+                    neighbour_quarters["right"][1]
+
+                ))
+
+                current_node_quarters = order_quarters([robot.quarter_tiles[s] for s in robot.quarter_tiles])
+
+                current_node = TileNode(current_node_quarters)
+                neighbour_node = TileNode(neighbour_node_quarters, visited=False)
+
+                robot.tiles_graph.add_node(current_node, neighbour_node)
+            elif side == "back":
+                neighbour_node_quarters = order_quarters((
+                    quarters["bottom_right"],
+                    quarters["bottom_left"],
+                    neighbour_quarters["back"][0],
+                    neighbour_quarters["back"][1]
+                ))
+
+                current_node_quarters = order_quarters([robot.quarter_tiles[s] for s in robot.quarter_tiles])
+
+                current_node = TileNode(current_node_quarters)
+                neighbour_node = TileNode(neighbour_node_quarters, visited=False)
+
+                robot.tiles_graph.add_node(current_node, neighbour_node)
+            elif side == "left":
+                neighbour_node_quarters = order_quarters((
+                    quarters["bottom_left"],
+                    quarters["top_left"],
+                    neighbour_quarters["left"][0],
+                    neighbour_quarters["left"][1]
+                ))
+
+                current_node_quarters = order_quarters([robot.quarter_tiles[s] for s in robot.quarter_tiles])
+
+                current_node = TileNode(current_node_quarters)
+                neighbour_node = TileNode(neighbour_node_quarters, visited=False)
+
+                robot.tiles_graph.add_node(current_node, neighbour_node)
+
