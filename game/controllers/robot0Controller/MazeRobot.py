@@ -110,6 +110,7 @@ class MazeRobot:
         self.abs_half_tile = None
 
         self.quarter_tiles = None
+        self.ordered_quarter_tiles = None
 
         self.visited_quarters = dict()
         self.unvisited_quarters = dict()
