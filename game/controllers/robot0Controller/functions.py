@@ -35,8 +35,12 @@ def run_simulation(robot: MazeRobot, step=16):
         # print("quarter neighbours: ", check_neighbouring_quarter_tile(robot))
         # print_dict(robot.visited_quarters)
         # print(robot.detected_signs)
-        print(robot.tiles_graph)
-        print("Haf Tile: ", robot.abs_half_tile)
+        # print(robot.tiles_graph)
+        # print("Haf Tile: ", robot.abs_half_tile)
+        print(robot.ordered_quarter_tiles)
+        # print(get_moves_to_unvisited(robot, robot.ordered_quarter_tiles))
+        # for tile in robot.tiles_graph.tiles:
+        #     print(robot.tiles_graph.tiles[tile])
         print("-----------------")
 
         robot.counter += 1
@@ -379,6 +383,10 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
     if not robot.is_moving:
         add_unvisited_quarter_tiles(robot)
         update_graph(robot)
+        print(get_moves_to_unvisited(robot, robot.ordered_quarter_tiles))
+        print("bfs: ", bfs(robot, robot.ordered_quarter_tiles))
+        for tile in robot.tiles_graph.tiles:
+            print(robot.tiles_graph.tiles[tile])
 
     if half:
         length = 6
@@ -1065,6 +1073,8 @@ def get_quarter_tiles_around(robot: MazeRobot, robot_pos):
 
     robot.quarter_tiles = quarter_tiles_dict
 
+    robot.ordered_quarter_tiles = order_quarters([robot.quarter_tiles[s] for s in robot.quarter_tiles])
+
     return quarter_tiles_dict
 
 
@@ -1286,21 +1296,23 @@ def navigate2(robot:MazeRobot):
     """
 
     if not(check_walls(robot)["right_navigate"]) and check_neighbouring_quarter_tile(robot)["right"]:
-        print("Turn Right")
+
         turn_90_time_step(robot, "right")
 
         move_one_tile_gps(robot, True)
+        print("finished move_one_tile_gps")
     else:
         if check_walls(robot)["front"] or check_neighbour_holes(robot)["front"]:
             turn_90_time_step(robot, "left")
 
         elif (not check_walls(robot)["front"] and check_neighbouring_quarter_tile(robot)["front"]) or right_left_back_walls(robot):
-            print("Move Front")
+
 
             move_one_tile_gps(robot, True)
+            print("finished move_one_tile_gps")
 
         else:
-            print("Turn Left")
+
             turn_90_time_step(robot, "left")
 
 
@@ -1446,4 +1458,73 @@ def update_graph(robot: MazeRobot):
                 neighbour_node = TileNode(neighbour_node_quarters, visited=False)
 
                 robot.tiles_graph.add_node(current_node, neighbour_node)
+
+
+
+def get_relative_direction(start, target):
+    x_diff = target[0][0] - start[0][0]
+    y_diff = target[0][1] - start[0][1]
+
+    if x_diff == 0 and y_diff == 0:
+        return "same"
+    elif x_diff == 0 and y_diff < 0:
+        return "front"
+    elif x_diff == 0 and y_diff > 0:
+        return "down"
+    elif x_diff > 0 and y_diff == 0:
+        return "right"
+    elif x_diff < 0 and y_diff == 0:
+        return "left"
+
+
+def bfs(robot: MazeRobot, current_pos):
+    parents = dict()
+    searched = dict()
+    queue = [current_pos]
+
+
+    # initialize dicts:
+    for quadrants in robot.tiles_graph.tiles:
+        parents[quadrants] = None
+        searched[quadrants] = False
+
+    searched[current_pos] = True
+    #  Loop until nearest unvisited
+    unvisited_tile = None
+    while queue and not unvisited_tile:
+        current = queue.pop(0)
+        if not unvisited_tile:
+
+            node : TileNode = robot.tiles_graph.tiles[current]
+
+            for neighbour_node in node.neighbors:
+
+                if not searched[neighbour_node.quadrants]:
+                    searched[neighbour_node.quadrants] = True
+                    parents[neighbour_node.quadrants] = current
+                    print("is {} visited: {} ".format(neighbour_node.quadrants, neighbour_node.visited))
+                    print(neighbour_node)
+                    if not neighbour_node.visited:
+                        unvisited_tile = neighbour_node.quadrants
+                        print("_BFS END_")
+                        break
+                    queue.append(neighbour_node.quadrants)
+
+    # Get the shortest path
+    path = []
+    while unvisited_tile:
+        path.append(unvisited_tile)
+        unvisited_tile = parents[unvisited_tile]
+
+    path.reverse()
+    return path
+
+
+def get_moves_to_unvisited(robot: MazeRobot, current_pos):
+    path = bfs(robot, current_pos)
+    moves = []
+    for i in range(len(path) - 1):
+        moves.append(get_relative_direction(path[i], path[i + 1]))
+
+    return moves
 
