@@ -21,6 +21,12 @@ class TilesGraph:
             cat += f"{self.tiles[tile]}\n"
         return cat
 
+    def remove_all_occurrences(self, quadrant):
+        for tile in self.tiles:
+            self.tiles[tile].neighbors.discard(self.tiles[quadrant])
+        del self.tiles[quadrant]
+
+
     def add_node(self, tile: TileNode, neighbour_tile: TileNode):
 
         tile_is_new = tile.quadrants not in self.tiles
