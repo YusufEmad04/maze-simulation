@@ -119,6 +119,8 @@ class MazeRobot:
 
         self.tiles_graph = TilesGraph()
 
+        self.strategy = 0
+
         '''
         tiles_graph.add_node(N
         '''

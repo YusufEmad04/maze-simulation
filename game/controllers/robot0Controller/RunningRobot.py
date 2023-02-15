@@ -18,7 +18,20 @@ class RunningRobot(MazeRobot):
         update_dir(self)
         # start_server(self)
         while self.can_run_simulation:
-            navigate2(self)
+            # if self.strategy:
+            #     navigate2(self)
+            # else:
+            #     move_bfs(self)
+            # navigate2(self)
+            if self.strategy == 0:
+                navigate2(self)
+            elif self.strategy == 1:
+                move_bfs(self)
+
+            elif self.strategy == 2:
+                navigate3(self)
+
+            # navigate3(self)
 
             run_simulation(self, 16)
 

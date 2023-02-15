@@ -37,10 +37,18 @@ def run_simulation(robot: MazeRobot, step=16):
         # print(robot.detected_signs)
         # print(robot.tiles_graph)
         # print("Haf Tile: ", robot.abs_half_tile)
-        print(robot.ordered_quarter_tiles)
+        # print(robot.ordered_quarter_tiles)
+        # print(robot.abs_half_tile)
+        # print(check_neighbour_holes(robot))
+        # print(robot.holes)
         # print(get_moves_to_unvisited(robot, robot.ordered_quarter_tiles))
         # for tile in robot.tiles_graph.tiles:
         #     print(robot.tiles_graph.tiles[tile])
+        print("do navigate: ", robot.strategy)
+        print("hole: ", robot.holes)
+        print("right_navigate:", check_walls(robot)["right_navigate"])
+        print("left_navigate", check_walls(robot)["left_navigate"])
+        print("front: ", check_walls(robot)["front"])
         print("-----------------")
 
         robot.counter += 1
@@ -311,8 +319,8 @@ def turn_left(robot: MazeRobot, v):
 def turn_90_time_step(robot: MazeRobot, direction="right"):
     if robot.color_case == "swamp":
         # TODO Make sure to submit correct x
-        # x = 217
-        x = 70
+        x = 217
+        # x = 70
 
         speed = 2
     else:
@@ -329,6 +337,7 @@ def turn_90_time_step(robot: MazeRobot, direction="right"):
     # detected = False
 
     for i in range(x):
+        print(x)
 
         check_camz(robot, direction, x=i)
                 # stop(robot, 150)
@@ -383,8 +392,8 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
     if not robot.is_moving:
         add_unvisited_quarter_tiles(robot)
         update_graph(robot)
-        print(get_moves_to_unvisited(robot, robot.ordered_quarter_tiles))
-        print("bfs: ", bfs(robot, robot.ordered_quarter_tiles))
+        print(get_moves_to_unvisited(robot))
+        print("bfs: ", bfs(robot))
         for tile in robot.tiles_graph.tiles:
             print(robot.tiles_graph.tiles[tile])
 
@@ -435,7 +444,7 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
                 if robot.should_move_back:
                     move_back_hole(robot)
                     robot.should_move_back = False
-                    return False
+                    return "hole"
 
                 move_forward2(robot, 6.221)
                 robot.is_moving = True
@@ -468,7 +477,7 @@ def move_one_tile_gps(robot: MazeRobot, half=False):
                 if robot.should_move_back:
                     move_back_hole(robot)
                     robot.should_move_back = False
-                    return False
+                    return "hole"
 
                 move_forward2(robot, 6.221)
                 robot.is_moving = True
@@ -509,6 +518,7 @@ def get_gps(robot: MazeRobot):
         robot.visited_tiles[robot.rounded_pos] = 0
 
     get_current_tile2(robot)
+    # print(f"robot.abs_half_tile: {robot.abs_half_tile}")
     quarter_tiles = get_quarter_tiles_around(robot, robot.abs_half_tile)
 
     for key in quarter_tiles:
@@ -619,6 +629,7 @@ def get_all_values(robot: MazeRobot):
     get_gyro_values(robot)
     get_lidar(robot)
     view_colour(robot)
+    receive_lack_of_progress(robot)
 
 
 def map_updater(robot: MazeRobot, x, z):
@@ -720,12 +731,14 @@ def update_area(robot: MazeRobot):
 def view_colour(robot: MazeRobot):
     color_case = ""
     r, g, b = robot.color_sensor_values
+    # [202, 168, 96]
 
     if (r >= 200) and (g >= 200) and (b >= 200):
         # print("White")
         robot.color_case = "white"
         robot.area_flag = False
 
+    # elif 195 <= r <= 235 and 170 <= g <= 200 and 95 <= b <= 125:
     elif 185 <= r <= 205 and 150 <= g <= 170 and 80 <= b <= 100:
         # print("Orange")
         # TODO Rename swamp to Shorbet 3ads
@@ -739,17 +752,17 @@ def view_colour(robot: MazeRobot):
     elif r >= 235 and 50 <= g <= 90 and 50 <= b <= 90:
         # print("Red")
         robot.color_case = "red"
-        add_connection_tile(robot, robot.color_case)
+        # add_connection_tile(robot, robot.color_case)
 
     elif 50 <= r <= 90 and 50 <= g <= 90 and b >= 235:
         # print("Blue")
         robot.color_case = "blue"
-        add_connection_tile(robot, robot.color_case)
+        # add_connection_tile(robot, robot.color_case)
 
     elif 125 <= r <= 170 and 40 <= g <= 80 and 200 <= b <= 240:
         # print("Purple")
         robot.color_case = "purple"
-        add_connection_tile(robot, robot.color_case)
+        # add_connection_tile(robot, robot.color_case)
 
     return robot.color_case
 
@@ -765,7 +778,7 @@ def add_hole(robot: MazeRobot):
     else:
         hole_tile = (robot.abs_half_tile[0] + sign * 12, robot.abs_half_tile[1])
 
-    hole_quarters = get_quarter_tiles_around(robot, hole_tile)
+    hole_quarters = get_quarter_tiles_around(robot, hole_tile, hole=True)
 
     for key in hole_quarters:
         tile = hole_quarters[key]
@@ -774,10 +787,16 @@ def add_hole(robot: MazeRobot):
             # Remove Holes from unvisited dict
             if value_in_dict(robot.unvisited_quarters, tile):
                 del robot.unvisited_quarters[tile]
+            for quadrants in robot.tiles_graph.tiles:
+                if tile in quadrants:
+                    robot.tiles_graph.remove_all_occurrences(quadrants)
+                    break
 
     # move_back_hole(robot)
     robot.should_move_back = True
 
+def delete_all_occurrences(robot, quadrant):
+    pass
 
 # TODO Unlike Holes, robot enters the connections tiles so error occurs in adding dict so the flag and
 #  only add type once is a workaround
@@ -1062,18 +1081,20 @@ def get_current_tile2(robot: MazeRobot):
     return [current_x, current_y]
 
 
-def get_quarter_tiles_around(robot: MazeRobot, robot_pos):
+def get_quarter_tiles_around(robot: MazeRobot, robot_position, hole=False):
+    print(f"calling get_quarter_tiles_around with {robot_position}")
 
     quarter_tiles_dict = {
-        "top_left": (robot_pos[0] - 3, robot_pos[1] - 3),
-        "bottom_left": (robot_pos[0] - 3, robot_pos[1] + 3),
-        "top_right": (robot_pos[0] + 3, robot_pos[1] - 3),
-        "bottom_right": (robot_pos[0] + 3, robot_pos[1] + 3)
+        "top_left": (robot_position[0] - 3, robot_position[1] - 3),
+        "bottom_left": (robot_position[0] - 3, robot_position[1] + 3),
+        "top_right": (robot_position[0] + 3, robot_position[1] - 3),
+        "bottom_right": (robot_position[0] + 3, robot_position[1] + 3)
     }
 
     robot.quarter_tiles = quarter_tiles_dict
 
-    robot.ordered_quarter_tiles = order_quarters([robot.quarter_tiles[s] for s in robot.quarter_tiles])
+    if not hole:
+        robot.ordered_quarter_tiles = order_quarters([robot.quarter_tiles[s] for s in robot.quarter_tiles])
 
     return quarter_tiles_dict
 
@@ -1315,6 +1336,33 @@ def navigate2(robot:MazeRobot):
 
             turn_90_time_step(robot, "left")
 
+def navigate3(robot:MazeRobot):
+    """
+    if no wall right.... go right
+    if wall right.... go forward
+    if wall right, forward.... go left
+    if hole...simulate it as wall and change dir when turning
+    """
+
+    if not(check_walls(robot)["left_navigate"]) and check_neighbouring_quarter_tile(robot)["left"]:
+
+        turn_90_time_step(robot, "left")
+
+        move_one_tile_gps(robot, True)
+        print("finished move_one_tile_gps")
+    else:
+        if check_walls(robot)["front"] or check_neighbour_holes(robot)["front"]:
+            turn_90_time_step(robot, "right")
+
+        elif (not check_walls(robot)["front"] and check_neighbouring_quarter_tile(robot)["front"]) or right_left_back_walls(robot):
+
+
+            move_one_tile_gps(robot, True)
+            print("finished move_one_tile_gps")
+
+        else:
+
+            turn_90_time_step(robot, "right")
 
 def round_to_12(x):
     return 12 * ((x + 6) // 12)
@@ -1477,7 +1525,10 @@ def get_relative_direction(start, target):
         return "left"
 
 
-def bfs(robot: MazeRobot, current_pos):
+def bfs(robot: MazeRobot):
+    current_pos = robot.ordered_quarter_tiles
+    if current_pos not in robot.tiles_graph.tiles:
+        return None
     parents = dict()
     searched = dict()
     queue = [current_pos]
@@ -1520,11 +1571,84 @@ def bfs(robot: MazeRobot, current_pos):
     return path
 
 
-def get_moves_to_unvisited(robot: MazeRobot, current_pos):
-    path = bfs(robot, current_pos)
+def get_moves_to_unvisited(robot: MazeRobot):
+    path = bfs(robot)
+    if not path:
+        return None
     moves = []
     for i in range(len(path) - 1):
         moves.append(get_relative_direction(path[i], path[i + 1]))
 
     return moves
 
+def translate_direction_to_movements(robot: MazeRobot, direction):
+    movements_dict = {
+        "front": ["front"],
+        "right": ["right","front"],
+        "down": ["right","right","front"],
+        "left": ["left","front"]
+    }
+
+    if robot.current_direction == 1:
+        movements_dict["front"] = ["left","front"]
+        movements_dict["right"] = ["front"]
+        movements_dict["down"] = ["right","front"]
+        movements_dict["left"] = ["right","right","front"]
+    elif robot.current_direction == 2:
+        movements_dict["front"] = ["right", "right", "front"]
+        movements_dict["right"] = ["left", "front"]
+        movements_dict["down"] = ["front"]
+        movements_dict["left"] = ["right", "front"]
+    elif robot.current_direction == 3:
+        movements_dict["front"] = ["right", "front"]
+        movements_dict["right"] = ["right", "right", "front"]
+        movements_dict["down"] = ["left", "front"]
+        movements_dict["left"] = ["front"]
+
+    return movements_dict[direction]
+
+def move(robot, movement):
+    if movement == "front":
+        value = move_one_tile_gps(robot, half=True)
+        if value == "hole":
+            set_left_vel(robot, 1)
+            set_right_vel(robot, 1)
+            run_simulation(robot, 16)
+            update_dir(robot)
+    elif movement == "right":
+        turn_90_time_step(robot, "right")
+    elif movement == "left":
+        turn_90_time_step(robot, "left")
+
+def move_bfs(robot: MazeRobot):
+    update_graph(robot)
+    directions = get_moves_to_unvisited(robot)
+    print(directions)
+    if not directions:
+        navigate2(robot)
+        return
+
+
+    for direction in directions:
+        movements = translate_direction_to_movements(robot, direction)
+        print(movements)
+        for movement in movements:
+            move(robot, movement)
+            if robot.strategy != 2:
+                # navigate2(robot)
+                return None
+    #     movements_arr.extend(movements)
+    # print(movements_arr)
+    # for movement in movements_arr:
+    #     move(robot, movement)
+
+
+def receive_lack_of_progress(robot: MazeRobot):
+    if robot.receiver.getQueueLength() > 0:  # If receiver queue is not empty
+        receivedData = robot.receiver.getData()
+        tup = struct.unpack('c', receivedData)  # Parse data into character
+        if tup[0].decode("utf-8") == 'L':  # 'L' means lack of progress occurred
+            robot.strategy += 1
+            # make it between 0 and 2
+            robot.strategy %= 3
+        robot.receiver.nextPacket()  # Discard the current data packet
